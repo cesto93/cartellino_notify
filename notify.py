@@ -40,15 +40,17 @@ async def get_chat_ids(bot_token: str) -> None:
             print("No new messages found.")
             return
 
-        chat_ids = {
-            update.message.chat.id
+        chats = {
+            update.message.chat.id: update.message.chat
             for update in updates
             if update.message and update.message.chat
         }
 
-        if chat_ids:
-            print("Found chat IDs:")
-            for chat_id in chat_ids:
-                print(chat_id)
+        if chats:
+            print("Found chats:")
+            for chat_id, chat in chats.items():
+                print(
+                    f"Chat ID: {chat_id}, First Name: {chat.first_name}, Last Name: {chat.last_name}"
+                )
         else:
-            print("No chat IDs found in recent messages.")
+            print("No chats found in recent messages.")
