@@ -10,20 +10,20 @@ def main():
     parser = argparse.ArgumentParser(
         description="A simple tool to calculate work turn finish time."
     )
-    parser.add_argument("start_time", help="Start time in 'HH:MM:SS' format")
+    parser.add_argument("start_time", help="Start time in 'HH:MM' format")
     parser.add_argument(
         "--work-time",
         dest="work_time",
         required=False,
-        default="07:12:00",
-        metavar="HH:MM:SS",
-        help="Work duration in 'HH:MM:SS' format. Defaults to 07:12:00",
+        default="07:12",
+        metavar="HH:MM",
+        help="Work duration in 'HH:MM' format. Defaults to 07:12",
     )
     parser.add_argument(
         "--lunch_time",
         required=False,
-        help="Lunch duration in 'HH:MM:SS' format. Defaults to 0:30:00",
-        default="0:30:00",
+        help="Lunch duration in 'HH:MM' format. Defaults to 0:30",
+        default="0:30",
     )
 
     args = parser.parse_args()

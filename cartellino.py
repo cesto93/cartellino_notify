@@ -8,14 +8,14 @@ def calculate_work_turn_finish(
     Calculates when a work turn finishes based on start time, work time, and lunch time.
 
     Args:
-        start_time_str: The start time of the work shift in 'HH:MM:SS' format.
-        work_time_str: The total duration of work in 'HH:MM:SS' format.
-        lunch_time_str: The duration of the lunch break in 'HH:MM:SS' format.
+        start_time_str: The start time of the work shift in 'HH:MM' format.
+        work_time_str: The total duration of work in 'HH:MM' format.
+        lunch_time_str: The duration of the lunch break in 'HH:MM' format.
 
     Returns:
-        The calculated finish time of the work shift in 'HH:MM:SS' format.
+        The calculated finish time of the work shift in 'HH:MM' format.
     """
-    time_format = "%H:%M:%S"
+    time_format = "%H:%M"
 
     # Convert string inputs to datetime and timedelta objects
     try:
@@ -24,16 +24,14 @@ def calculate_work_turn_finish(
         work_duration = timedelta(
             hours=work_duration_parts[0],
             minutes=work_duration_parts[1],
-            seconds=work_duration_parts[2],
         )
         lunch_duration_parts = [int(part) for part in lunch_time_str.split(":")]
         lunch_duration = timedelta(
             hours=lunch_duration_parts[0],
             minutes=lunch_duration_parts[1],
-            seconds=lunch_duration_parts[2],
         )
     except ValueError:
-        return "Invalid time format. Please use 'HH:MM:SS'."
+        return "Invalid time format. Please use 'HH:MM'."
 
     # Calculate the finish time by adding the work and lunch durations to the start time
     finish_time = start_time + work_duration + lunch_duration
