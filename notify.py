@@ -1,11 +1,4 @@
-import os
-import sys
-import argparse
-
-from dotenv import load_dotenv
-
 import telegram
-import asyncio
 
 
 async def send_telegram_notification(
