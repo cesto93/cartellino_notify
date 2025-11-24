@@ -39,12 +39,3 @@ def calculate_work_turn_finish(
     finish_time = start_time + work_duration + lunch_duration
 
     return finish_time.strftime(time_format)
-
-
-# Example usage:
-start = "08:00:00"
-work = "08:00:00"
-lunch = "0:30:00"
-
-finish_time = calculate_work_turn_finish(start, work, lunch)
-print(f"The work turn finishes at: {finish_time}")
