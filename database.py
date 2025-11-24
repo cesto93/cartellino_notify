@@ -13,10 +13,13 @@ def get_db_connection():
 
 
 def init_db():
-    """Initializes the database and creates the settings table if it doesn't exist."""
+    """Initializes the database and creates tables if they don't exist."""
     conn = get_db_connection()
     conn.execute(
         "CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)"
+    )
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS chats (chat_id INTEGER PRIMARY KEY, name TEXT)"
     )
     conn.commit()
     conn.close()
@@ -50,6 +53,16 @@ def get_all_settings() -> Dict[str, str]:
     rows = cursor.fetchall()
     conn.close()
     return {row["key"]: row["value"] for row in rows}
+
+
+def store_chat(chat_id: int, name: str) -> None:
+    """Stores a chat ID and its associated name in the database."""
+    conn = get_db_connection()
+    conn.execute(
+        "INSERT OR REPLACE INTO chats (chat_id, name) VALUES (?, ?)", (chat_id, name)
+    )
+    conn.commit()
+    conn.close()
 
 
 def store_start_time(start_time: str) -> None:

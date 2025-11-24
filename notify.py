@@ -1,4 +1,5 @@
 import telegram
+from database import store_chat
 
 
 async def send_telegram_notification(
@@ -42,8 +43,10 @@ async def get_chat_ids(bot_token: str) -> None:
         if chats:
             print("Found chats:")
             for chat_id, chat in chats.items():
-                print(
-                    f"Chat ID: {chat_id}, First Name: {chat.first_name}, Last Name: {chat.last_name}"
-                )
+                name = chat.first_name
+                if chat.last_name:
+                    name += f" {chat.last_name}"
+                store_chat(chat_id, name)
+                print(f"Stored Chat ID: {chat_id}, Name: {name}")
         else:
             print("No chats found in recent messages.")

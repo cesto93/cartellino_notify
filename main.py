@@ -150,7 +150,7 @@ def job(
 @app.command()
 def chat_ids():
     """
-    Gets chat IDs from recent bot interactions.
+    Gets and stores chat IDs from recent bot interactions.
     """
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
     if not bot_token:
