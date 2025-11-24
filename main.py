@@ -6,6 +6,7 @@ import typer
 from dotenv import load_dotenv
 
 from cartellino import turn_end_time, time_to_turn_end
+from database import get_all_settings, get_setting, init_db, store_setting
 from notify import send_telegram_notification, get_chat_ids
 
 app = typer.Typer()
@@ -14,30 +15,34 @@ app = typer.Typer()
 @app.command()
 def work_end(
     start_time: str = typer.Argument(..., help="Start time in 'HH:MM' format"),
-    work_time: str = typer.Option(
-        "07:12",
+    work_time: Optional[str] = typer.Option(
+        None,
         "--work-time",
-        help="Work duration in 'HH:MM' format. Defaults to 07:12",
+        help="Work duration in 'HH:MM' format. Defaults to value in db or '07:12'",
         metavar="HH:MM",
     ),
-    lunch_time: str = typer.Option(
-        "0:30",
+    lunch_time: Optional[str] = typer.Option(
+        None,
         "--lunch-time",
-        help="Lunch duration in 'HH:MM' format. Defaults to 0:30",
+        help="Lunch duration in 'HH:MM' format. Defaults to value in db or '00:30'",
     ),
     leisure_time: Optional[str] = typer.Option(
         None,
         "--leisure-time",
-        help="Leisure duration in 'HH:MM' format to be subtracted from work time.",
+        help="Leisure duration in 'HH:MM' format to be subtracted from work time. Defaults to value in db.",
         metavar="HH:MM",
     ),
 ):
     """
     A simple tool to calculate remaining time until work turn finishes.
     """
-    finish_time = turn_end_time(start_time, work_time, lunch_time, leisure_time)
+    wt = work_time or get_setting("work_time") or "07:12"
+    lt = lunch_time or get_setting("lunch_time") or "00:30"
+    lrt = leisure_time or get_setting("leisure_time")
+
+    finish_time = turn_end_time(start_time, wt, lt, lrt)
     print(f"Time remaining until work turn finishes at {finish_time}.")
-    remaining_time = time_to_turn_end(start_time, work_time, lunch_time, leisure_time)
+    remaining_time = time_to_turn_end(start_time, wt, lt, lrt)
     print(f"Remaining time: {remaining_time}")
 
 
@@ -75,6 +80,39 @@ def chat_ids():
     asyncio.run(get_chat_ids(bot_token))
 
 
+@app.command(name="set")
+def set_config(
+    work_time: Optional[str] = typer.Option(
+        None, "--work-time", help="Work duration in 'HH:MM' format."
+    ),
+    lunch_time: Optional[str] = typer.Option(
+        None, "--lunch-time", help="Lunch duration in 'HH:MM' format."
+    ),
+    leisure_time: Optional[str] = typer.Option(
+        None, "--leisure-time", help="Leisure duration in 'HH:MM' format."
+    ),
+):
+    """
+    Stores configuration values in the database.
+    """
+    if work_time:
+        store_setting("work_time", work_time)
+        print(f"Stored work_time: {work_time}")
+    if lunch_time:
+        store_setting("lunch_time", lunch_time)
+        print(f"Stored lunch_time: {lunch_time}")
+    if leisure_time:
+        store_setting("leisure_time", leisure_time)
+        print(f"Stored leisure_time: {leisure_time}")
+
+
+@app.command(name="config")
+def show_config():
+    """Shows all stored configurations."""
+    print(get_all_settings())
+
+
 if __name__ == "__main__":
     load_dotenv()
+    init_db()
     app()
