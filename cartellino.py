@@ -84,13 +84,21 @@ def time_to_turn_end(
         return "Invalid time format. Please use 'HH:MM'."
 
     if finish_time < current_time:
-        return "00:00"
+        overtime_duration = current_time - finish_time
+        total_overtime_minutes = int(overtime_duration.total_seconds() // 60)
+        overtime_hours, overtime_minutes = divmod(total_overtime_minutes, 60)
+        overtime_str = f"{overtime_hours:02}h:{overtime_minutes:02}m"
+
+        if total_overtime_minutes > 30:
+            return f"Liquidatable Overtime: {overtime_str}"
+        else:
+            return f"Overtime: {overtime_str}"
 
     remaining_duration = finish_time - current_time
     total_minutes = int(remaining_duration.total_seconds() // 60)
     hours, minutes = divmod(total_minutes, 60)
 
-    return f"{hours:02}h:{minutes:02}m"
+    return f"Remaining time: {hours:02}h:{minutes:02}m"
 
 
 def get_remaining_seconds(
