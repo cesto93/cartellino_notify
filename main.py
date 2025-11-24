@@ -25,11 +25,18 @@ def main():
         help="Lunch duration in 'HH:MM' format. Defaults to 0:30",
         default="0:30",
     )
+    parser.add_argument(
+        "--leisure-time",
+        dest="leisure_time",
+        required=False,
+        metavar="HH:MM",
+        help="Leisure duration in 'HH:MM' format to be subtracted from work time.",
+    )
 
     args = parser.parse_args()
 
     finish_time = calculate_work_turn_finish(
-        args.start_time, args.work_time, args.lunch_time
+        args.start_time, args.work_time, args.lunch_time, args.leisure_time
     )
     print(f"The work turn finishes at: {finish_time}")
 
