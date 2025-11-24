@@ -16,7 +16,7 @@ from database import (
 )
 from notify import send_telegram_notification, get_chat_ids
 
-app = typer.Typer()
+app = typer.Typer(no_args_is_help=True, help="Cartellino Notify CLI Tool")
 
 
 @app.command()
