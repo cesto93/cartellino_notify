@@ -5,7 +5,7 @@ from typing import Optional
 import typer
 from dotenv import load_dotenv
 
-from cartellino import turn_end_time, time_to_turn_end
+from cartellino import get_remaining_seconds, time_to_turn_end, turn_end_time
 from database import (
     get_all_settings,
     get_setting,
@@ -93,6 +93,57 @@ def notify(
 
 
 @app.command()
+def job(
+    start_time: Optional[str] = typer.Argument(
+        None, help="Start time in 'HH:MM' format. Defaults to value stored for today."
+    ),
+    work_time: Optional[str] = typer.Option(
+        None,
+        "--work-time",
+        help="Work duration in 'HH:MM' format. Defaults to value in db or '07:12'",
+        metavar="HH:MM",
+    ),
+    lunch_time: Optional[str] = typer.Option(
+        None,
+        "--lunch-time",
+        help="Lunch duration in 'HH:MM' format. Defaults to value in db or '00:30'",
+    ),
+    leisure_time: Optional[str] = typer.Option(
+        None,
+        "--leisure-time",
+        help="Leisure duration in 'HH:MM' format to be subtracted from work time. Defaults to value in db.",
+        metavar="HH:MM",
+    ),
+    message: str = typer.Option("Work time is over!", help="Message to send."),
+):
+    """
+    Waits until work end and sends a notification.
+    """
+    st = start_time or get_start_time()
+    if not st:
+        print(
+            "Error: Start time not provided and no start time stored for today.\n"
+            "Use 'start' command to store it or provide it as an argument."
+        )
+        raise typer.Exit(code=1)
+
+    wt = work_time or get_setting("work_time") or "07:12"
+    lt = lunch_time or get_setting("lunch_time") or "00:30"
+    lrt = leisure_time or get_setting("leisure_time")
+
+    finish_time_str = turn_end_time(st, wt, lt, lrt)
+    print(f"Work turn finishes at {finish_time_str}. Waiting to send notification...")
+
+    remaining_seconds = get_remaining_seconds(st, wt, lt, lrt)
+
+    async def wait_and_notify():
+        await asyncio.sleep(remaining_seconds)
+        await _send_notification(message)
+
+    asyncio.run(wait_and_notify())
+
+
+@app.command()
 def chat_ids():
     """
     Gets chat IDs from recent bot interactions.
@@ -104,6 +155,19 @@ def chat_ids():
 
     print("Getting chat IDs...")
     asyncio.run(get_chat_ids(bot_token))
+
+
+async def _send_notification(message: str):
+    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    if not bot_token:
+        print("Error: TELEGRAM_BOT_TOKEN environment variable not set.")
+        sys.exit(1)
+
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+    if not chat_id:
+        print("Error: TELEGRAM_CHAT_ID environment variable not set.")
+        sys.exit(1)
+    await send_telegram_notification(bot_token, chat_id, message)
 
 
 @app.command(name="set")
