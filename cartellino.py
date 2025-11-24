@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 
-def calculate_work_turn_finish(
+def turn_end_time(
     start_time_str: str,
     work_time_str: str,
     lunch_time_str: str,
@@ -49,3 +49,45 @@ def calculate_work_turn_finish(
     finish_time = start_time + work_duration + lunch_duration - leisure_duration
 
     return finish_time.strftime(time_format)
+
+
+def time_to_turn_end(
+    start_time_str: str,
+    work_time_str: str,
+    lunch_time_str: str,
+    leisure_time_str: Optional[str] = None,
+) -> str:
+    """
+    Calculates the remaining time until the work turn finishes.
+
+    Args:
+        start_time_str: The start time of the work shift in 'HH:MM' format.
+        work_time_str: The total duration of work in 'HH:MM' format.
+        lunch_time_str: The duration of the lunch break in 'HH:MM' format.
+        leisure_time_str: The duration of leisure time in 'HH:MM' format. It's optional.
+
+    Returns:
+        The remaining time until the work shift finishes in 'HH:MM' format.
+    """
+    finish_time_str = turn_end_time(
+        start_time_str, work_time_str, lunch_time_str, leisure_time_str
+    )
+    time_format = "%H:%M"
+
+    try:
+        finish_time = datetime.strptime(finish_time_str, time_format)
+        current_time = datetime.now().replace(second=0, microsecond=0)
+        finish_time = finish_time.replace(
+            year=current_time.year, month=current_time.month, day=current_time.day
+        )
+    except ValueError:
+        return "Invalid time format. Please use 'HH:MM'."
+
+    if finish_time < current_time:
+        return "00:00"
+
+    remaining_duration = finish_time - current_time
+    total_minutes = int(remaining_duration.total_seconds() // 60)
+    hours, minutes = divmod(total_minutes, 60)
+
+    return f"{hours:02}h:{minutes:02}m"

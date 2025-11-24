@@ -5,14 +5,14 @@ from typing import Optional
 import typer
 from dotenv import load_dotenv
 
-from cartellino import calculate_work_turn_finish
+from cartellino import turn_end_time, time_to_turn_end
 from notify import send_telegram_notification, get_chat_ids
 
 app = typer.Typer()
 
 
 @app.command()
-def calc(
+def work_end(
     start_time: str = typer.Argument(..., help="Start time in 'HH:MM' format"),
     work_time: str = typer.Option(
         "07:12",
@@ -33,12 +33,12 @@ def calc(
     ),
 ):
     """
-    A simple tool to calculate work turn finish time.
+    A simple tool to calculate remaining time until work turn finishes.
     """
-    finish_time = calculate_work_turn_finish(
-        start_time, work_time, lunch_time, leisure_time
-    )
-    print(f"The work turn finishes at: {finish_time}")
+    finish_time = turn_end_time(start_time, work_time, lunch_time, leisure_time)
+    print(f"Time remaining until work turn finishes at {finish_time}.")
+    remaining_time = time_to_turn_end(start_time, work_time, lunch_time, leisure_time)
+    print(f"Remaining time: {remaining_time}")
 
 
 @app.command()
