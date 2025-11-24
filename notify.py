@@ -52,27 +52,3 @@ async def get_chat_ids(bot_token: str) -> None:
                 print(chat_id)
         else:
             print("No chat IDs found in recent messages.")
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Telegram notifier.")
-    parser.add_argument(
-        "--get-chat-ids",
-        action="store_true",
-        help="Get chat IDs from recent bot interactions.",
-    )
-    args = parser.parse_args()
-
-    load_dotenv()
-
-    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    if not bot_token:
-        print("Error: TELEGRAM_BOT_TOKEN environment variable not set.")
-        sys.exit(1)
-
-    if args.get_chat_ids:
-        asyncio.run(get_chat_ids(bot_token))
-    else:
-        chat_id = os.environ.get("TELEGRAM_CHAT_ID")
-        message = "Work time is over!"
-        asyncio.run(send_telegram_notification(bot_token, chat_id, message))
