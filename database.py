@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import date
 from typing import Dict, Optional
 
 DB_FILE = "cartellino.db"
@@ -49,3 +50,30 @@ def get_all_settings() -> Dict[str, str]:
     rows = cursor.fetchall()
     conn.close()
     return {row["key"]: row["value"] for row in rows}
+
+
+def store_start_time(start_time: str) -> None:
+    """Stores the start time for the current day."""
+    conn = get_db_connection()
+    today = date.today().isoformat()
+    conn.execute(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+        ("start_time", start_time),
+    )
+    conn.execute(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+        ("start_time_date", today),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_start_time() -> Optional[str]:
+    """Retrieves the start time if it was stored today."""
+    today = date.today().isoformat()
+    stored_date = get_setting("start_time_date")
+
+    if stored_date == today:
+        return get_setting("start_time")
+    else:
+        return None

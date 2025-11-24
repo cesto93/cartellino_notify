@@ -6,7 +6,14 @@ import typer
 from dotenv import load_dotenv
 
 from cartellino import turn_end_time, time_to_turn_end
-from database import get_all_settings, get_setting, init_db, store_setting
+from database import (
+    get_all_settings,
+    get_setting,
+    get_start_time,
+    init_db,
+    store_setting,
+    store_start_time,
+)
 from notify import send_telegram_notification, get_chat_ids
 
 app = typer.Typer()
@@ -14,7 +21,9 @@ app = typer.Typer()
 
 @app.command()
 def work_end(
-    start_time: str = typer.Argument(..., help="Start time in 'HH:MM' format"),
+    start_time: Optional[str] = typer.Argument(
+        None, help="Start time in 'HH:MM' format. Defaults to value stored for today."
+    ),
     work_time: Optional[str] = typer.Option(
         None,
         "--work-time",
@@ -36,14 +45,31 @@ def work_end(
     """
     A simple tool to calculate remaining time until work turn finishes.
     """
+    st = start_time or get_start_time()
+    if not st:
+        print(
+            "Error: Start time not provided and no start time stored for today.\n"
+            "Use 'start' command to store it or provide it as an argument."
+        )
+        raise typer.Exit(code=1)
+
     wt = work_time or get_setting("work_time") or "07:12"
     lt = lunch_time or get_setting("lunch_time") or "00:30"
     lrt = leisure_time or get_setting("leisure_time")
 
-    finish_time = turn_end_time(start_time, wt, lt, lrt)
+    finish_time = turn_end_time(st, wt, lt, lrt)
     print(f"Time remaining until work turn finishes at {finish_time}.")
-    remaining_time = time_to_turn_end(start_time, wt, lt, lrt)
+    remaining_time = time_to_turn_end(st, wt, lt, lrt)
     print(f"Remaining time: {remaining_time}")
+
+
+@app.command()
+def start(start_time: str = typer.Argument(..., help="Start time in 'HH:MM' format")):
+    """
+    Stores the start time for the current day.
+    """
+    store_start_time(start_time)
+    print(f"Stored start time for today: {start_time}")
 
 
 @app.command()
