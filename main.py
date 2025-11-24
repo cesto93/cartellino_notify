@@ -202,6 +202,14 @@ def show_config():
     print(get_all_settings())
 
 
+@app.command(name="help")
+def help_command(ctx: typer.Context):
+    """
+    Shows the main help message.
+    """
+    typer.echo(ctx.parent.get_help())
+
+
 if __name__ == "__main__":
     load_dotenv()
     init_db()
