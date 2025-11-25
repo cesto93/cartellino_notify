@@ -103,8 +103,3 @@ def start_bot() -> None:
     application.add_handler(CallbackQueryHandler(button_callback))
 
     application.run_polling()
-
-
-if __name__ == "__main__":
-    load_dotenv()
-    start_bot()

@@ -16,7 +16,7 @@ from database import (
     store_start_time,
     store_daily_setting,
 )
-from bot import send_telegram_notification, get_chat_ids
+from bot import send_telegram_notification, get_chat_ids, start_bot
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -141,6 +141,7 @@ def job(
     print(f"Work turn finishes at {finish_time_str}. Waiting to send notification...")
 
     remaining_seconds = get_remaining_seconds(st, wt, lt, lrt)
+    start_bot()
 
     async def wait_and_notify():
         await asyncio.sleep(remaining_seconds)
