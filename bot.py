@@ -91,9 +91,8 @@ async def send_telegram_notification(
         print("Notification sent successfully!")
 
 
-def main() -> None:
+def start_bot() -> None:
     """Avvia il bot."""
-    load_dotenv()
     bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
     if not bot_token:
         raise ValueError("La variabile d'ambiente TELEGRAM_BOT_TOKEN non è impostata.")
@@ -107,4 +106,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    load_dotenv()
+    start_bot()
