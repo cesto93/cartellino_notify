@@ -1,3 +1,4 @@
+import asyncio
 import os
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, Bot
 from telegram.ext import (
@@ -6,8 +7,8 @@ from telegram.ext import (
     CallbackQueryHandler,
     ContextTypes,
 )
-from dotenv import load_dotenv
 from actions import work_end
+from cartellino import get_remaining_seconds
 from database import store_chat
 
 
@@ -91,15 +92,35 @@ async def send_telegram_notification(
         print("Notification sent successfully!")
 
 
-def start_bot() -> None:
+async def notify_work_end(delay: float, bot_token: str, chat_id: str) -> None:
+    message = "Work time is over!"
+    await asyncio.sleep(delay)
+    await send_telegram_notification(bot_token, chat_id, message)
+
+
+def start_bot(
+    start_time: str, work_time: str, lunch_time: str, leisure_time: str | None
+) -> None:
     """Avvia il bot."""
     bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
     if not bot_token:
         raise ValueError("La variabile d'ambiente TELEGRAM_BOT_TOKEN non è impostata.")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    if not chat_id:
+        raise ValueError("La variabile d'ambiente TELEGRAM_CHAT_ID non è impostata.")
 
     application = Application.builder().token(bot_token).build()
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CallbackQueryHandler(button_callback))
 
+    remaining_seconds = get_remaining_seconds(
+        start_time, work_time, lunch_time, leisure_time
+    )
+    print(f"Remaining seconds: {remaining_seconds}")
+
+    loop = asyncio.get_event_loop()
+    loop.create_task(notify_work_end(remaining_seconds, bot_token, chat_id))
+
+    print("Bot started. Listening for commands...")
     application.run_polling()

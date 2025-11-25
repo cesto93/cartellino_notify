@@ -5,7 +5,7 @@ from typing import Optional
 import typer
 from dotenv import load_dotenv
 
-from cartellino import get_remaining_seconds, time_to_turn_end, turn_end_time
+from cartellino import time_to_turn_end, turn_end_time
 from database import (
     get_all_settings,
     get_setting,
@@ -120,7 +120,6 @@ def job(
         help="Leisure duration in 'HH:MM' format to be subtracted from work time. Defaults to value in db.",
         metavar="HH:MM",
     ),
-    message: str = typer.Option("Work time is over!", help="Message to send."),
 ):
     """
     Waits until work end and sends a notification.
@@ -138,16 +137,9 @@ def job(
     lrt = leisure_time or get_daily_setting("leisure_time")
 
     finish_time_str = turn_end_time(st, wt, lt, lrt)
-    print(f"Work turn finishes at {finish_time_str}. Waiting to send notification...")
+    print(f"Work turn finishes at {finish_time_str}")
 
-    remaining_seconds = get_remaining_seconds(st, wt, lt, lrt)
-    start_bot()
-
-    async def wait_and_notify():
-        await asyncio.sleep(remaining_seconds)
-        await _send_notification(message)
-
-    asyncio.run(wait_and_notify())
+    start_bot(st, wt, lt, lrt)
 
 
 @app.command()
@@ -162,19 +154,6 @@ def chat_ids():
 
     print("Getting chat IDs...")
     asyncio.run(get_chat_ids(bot_token))
-
-
-async def _send_notification(message: str):
-    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    if not bot_token:
-        print("Error: TELEGRAM_BOT_TOKEN environment variable not set.")
-        sys.exit(1)
-
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID")
-    if not chat_id:
-        print("Error: TELEGRAM_CHAT_ID environment variable not set.")
-        sys.exit(1)
-    await send_telegram_notification(bot_token, chat_id, message)
 
 
 @app.command(name="set")
