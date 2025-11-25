@@ -14,7 +14,7 @@ from database import (
     store_setting,
     store_start_time,
 )
-from notify import send_telegram_notification, get_chat_ids
+from bot import send_telegram_notification, get_chat_ids
 
 app = typer.Typer(
     no_args_is_help=True,
