@@ -11,8 +11,10 @@ from database import (
     get_setting,
     get_start_time,
     init_db,
+    get_daily_setting,
     store_setting,
     store_start_time,
+    store_daily_setting,
 )
 from bot import send_telegram_notification, get_chat_ids
 
@@ -59,7 +61,7 @@ def work_end(
 
     wt = work_time or get_setting("work_time") or "07:12"
     lt = lunch_time or get_setting("lunch_time") or "00:30"
-    lrt = leisure_time or get_setting("leisure_time")
+    lrt = leisure_time or get_daily_setting("leisure_time")
 
     finish_time = turn_end_time(st, wt, lt, lrt)
     print(f"Time remaining until work turn finishes at {finish_time}.")
@@ -133,7 +135,7 @@ def job(
 
     wt = work_time or get_setting("work_time") or "07:12"
     lt = lunch_time or get_setting("lunch_time") or "00:30"
-    lrt = leisure_time or get_setting("leisure_time")
+    lrt = leisure_time or get_daily_setting("leisure_time")
 
     finish_time_str = turn_end_time(st, wt, lt, lrt)
     print(f"Work turn finishes at {finish_time_str}. Waiting to send notification...")
@@ -195,8 +197,8 @@ def set_config(
     if lunch_time:
         store_setting("lunch_time", lunch_time)
         print(f"Stored lunch_time: {lunch_time}")
-    if leisure_time:
-        store_setting("leisure_time", leisure_time)
+    if leisure_time:  #
+        store_daily_setting("leisure_time", leisure_time)
         print(f"Stored leisure_time: {leisure_time}")
 
 

@@ -1,4 +1,4 @@
-from database import get_setting, get_start_time
+from database import get_setting, get_start_time, get_daily_setting
 from cartellino import turn_end_time, time_to_turn_end
 
 
@@ -16,7 +16,7 @@ def work_end() -> str:
 
     wt = get_setting("work_time") or "07:12"
     lt = get_setting("lunch_time") or "00:30"
-    lrt = get_setting("leisure_time")
+    lrt = get_daily_setting("leisure_time")
 
     finish_time = turn_end_time(st, wt, lt, lrt)
     remaining_time = time_to_turn_end(st, wt, lt, lrt)

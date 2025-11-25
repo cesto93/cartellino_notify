@@ -90,3 +90,20 @@ def get_start_time() -> Optional[str]:
         return get_setting("start_time")
     else:
         return None
+
+
+def store_daily_setting(key: str, value: str) -> None:
+    """
+    Stores a setting along with the current date, making it valid for the day.
+    """
+    today = date.today().isoformat()
+    store_setting(key, value)
+    store_setting(f"{key}_date", today)
+
+
+def get_daily_setting(key: str) -> Optional[str]:
+    """
+    Retrieves a daily setting if it was stored today; otherwise, returns None.
+    """
+    today = date.today().isoformat()
+    return get_setting(key) if get_setting(f"{key}_date") == today else None
