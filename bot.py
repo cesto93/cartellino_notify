@@ -18,7 +18,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(
-        "Ciao! Sono il tuo bot per la timbratura. Usa il pulsante qui sotto per timbrare l'uscita.",
+        "Ciao! Sono il cartellino bot. Usa il pulsante qui sotto per sapere quando finisce il turno di lavoro.",
         reply_markup=reply_markup,
     )
 
