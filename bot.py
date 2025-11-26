@@ -28,6 +28,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Analizza la CallbackQuery e gestisce il pulsante premuto."""
     query = update.callback_query
+    if not query:
+        return
+
     await (
         query.answer()
     )  # Risponde alla callback per far sparire l'icona di caricamento
@@ -36,6 +39,8 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await query.edit_message_text(text="Eseguo il comando work-end...")
         # Esegue il comando CLI 'work-end'
         output = work_end()
+        if query.message is None:
+            return
         # Invia l'output del comando come nuovo messaggio
         await query.message.reply_text(
             f"<pre>{output}</pre>",
@@ -67,6 +72,8 @@ async def get_chat_ids(bot_token: str) -> None:
             print("Found chats:")
             for chat_id, chat in chats.items():
                 name = chat.first_name
+                if name is None:
+                    name = chat.username or "Unknown"
                 if chat.last_name:
                     name += f" {chat.last_name}"
                 store_chat(chat_id, name)
