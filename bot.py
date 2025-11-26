@@ -171,11 +171,15 @@ async def notify_work_turn(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     )
     remaining_seconds = get_remaining_seconds(start_time, wt, lt, lrt)
     print(f"Remaining seconds: {remaining_seconds}")
+
+    if not update.message:
+        return
+
+    chat_id = update.message.chat_id
     bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
     loop = asyncio.get_event_loop()
-    chat_id = os.getenv("TELEGRAM_CHAT_ID")
     if bot_token and chat_id:
-        loop.create_task(notify_work_end(remaining_seconds, bot_token, chat_id))
+        loop.create_task(notify_work_end(remaining_seconds, bot_token, str(chat_id)))
 
 
 AWAIT_START_TIME = 0

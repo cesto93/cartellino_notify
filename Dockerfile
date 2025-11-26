@@ -6,7 +6,6 @@ ENV TZ=Europe/Berlin
 
 # Define environment variables. These will be overridden by Railway.
 ENV TELEGRAM_BOT_TOKEN=""
-ENV TELEGRAM_CHAT_ID=""
 
 # Set the working directory inside the container
 WORKDIR /app
