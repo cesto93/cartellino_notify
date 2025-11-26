@@ -99,27 +99,12 @@ def notify(
 
 
 @app.command()
-def job(
-    work_time: Optional[str] = typer.Option(
-        None,
-        "--work-time",
-        help="Work duration in 'HH:MM' format. Defaults to value in db or '07:12'",
-        metavar="HH:MM",
-    ),
-    lunch_time: Optional[str] = typer.Option(
-        None,
-        "--lunch-time",
-        help="Lunch duration in 'HH:MM' format. Defaults to value in db or '00:30'",
-    ),
-):
+def job():
     """
     Waits until work end and sends a notification.
     """
 
-    wt = work_time or get_setting("work_time") or "07:12"
-    lt = lunch_time or get_setting("lunch_time") or "00:30"
-
-    start_bot(wt, lt)
+    start_bot()
 
 
 @app.command()

@@ -13,7 +13,13 @@ from telegram.ext import (
 )
 from actions import work_end
 from cartellino import get_remaining_seconds, turn_end_time
-from database import get_daily_setting, store_chat, store_start_time
+from database import (
+    get_daily_setting,
+    get_setting,
+    get_start_time,
+    store_chat,
+    store_start_time,
+)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -111,11 +117,18 @@ async def notify_work_end(delay: float, bot_token: str, chat_id: str) -> None:
 
 
 async def ask_for_start_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Asks for the start time."""
-    if update.message:
+    """Asks for the start time only if it's not already stored."""
+    start_time = get_start_time()
+    if start_time:
         await update.message.reply_text(
-            "Ciao! Per favore, inserisci l'orario di inizio nel formato 'HH:MM'."
+            f"L'orario di inizio è già impostato per oggi: {start_time}"
         )
+        return NOTIFY_WORK_TURN
+    else:
+        if update.message:
+            await update.message.reply_text(
+                "Ciao! Per favore, inserisci l'orario di inizio nel formato 'HH:MM'."
+            )
     return AWAIT_START_TIME
 
 
@@ -135,45 +148,46 @@ async def handle_start_time(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             f"Orario di inizio impostato su: {message_text}"
         )
 
-    if (
-        context.bot_data
-        and "work_time" in context.bot_data
-        and "lunch_time" in context.bot_data
-        and "leisure_time" in context.bot_data
-    ):
-        wt = context.bot_data["work_time"]
-        lt = context.bot_data["lunch_time"]
-        lrt = context.bot_data["leisure_time"]
-        remaining_seconds = get_remaining_seconds(message_text, wt, lt, lrt)
-        print(f"Remaining seconds: {remaining_seconds}")
-        finish_time = turn_end_time(message_text, wt, lt, lrt)
-        await update.message.reply_text(
-            f"Attenderò fino alla fine del turno di lavoro e ti notificherò alle {finish_time}."
-        )
-        loop = asyncio.get_event_loop()
-        bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
-        chat_id = os.getenv("TELEGRAM_CHAT_ID")
-        if bot_token and chat_id:
-            loop.create_task(notify_work_end(remaining_seconds, bot_token, chat_id))
+    return NOTIFY_WORK_TURN
 
+
+async def notify_work_turn(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    start_time = get_start_time()
+    if not start_time:
+        await update.message.reply_text(
+            "L'orario di inizio non è impostato. Per favore, usa /start per impostarlo."
+        )
+        return ConversationHandler.END
+
+    wt = get_setting("work_time") or "07:12"
+    lt = get_setting("lunch_time") or "00:30"
+    lrt = get_daily_setting("leisure_time")
+
+    finish_time = turn_end_time(start_time, wt, lt, lrt)
+    await update.message.reply_text(
+        f"Attenderò fino alla fine del turno di lavoro e ti notificherò alle {finish_time}."
+    )
+    remaining_seconds = get_remaining_seconds(start_time, wt, lt, lrt)
+    print(f"Remaining seconds: {remaining_seconds}")
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    loop = asyncio.get_event_loop()
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    if bot_token and chat_id:
+        loop.create_task(notify_work_end(remaining_seconds, bot_token, chat_id))
     return ConversationHandler.END
 
 
 AWAIT_START_TIME = 0
+NOTIFY_WORK_TURN = 1
 
 
-def start_bot(work_time: str, lunch_time: str) -> None:
+def start_bot() -> None:
     """Avvia il bot."""
     bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
     if not bot_token:
         raise ValueError("La variabile d'ambiente TELEGRAM_BOT_TOKEN non è impostata.")
 
     application = Application.builder().token(bot_token).build()
-
-    leisure_time = get_daily_setting("leisure_time")
-    application.bot_data["work_time"] = work_time
-    application.bot_data["lunch_time"] = lunch_time
-    application.bot_data["leisure_time"] = leisure_time
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", ask_for_start_time)],

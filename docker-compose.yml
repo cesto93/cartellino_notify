@@ -1,6 +1,6 @@
 services:
   cartellino_notify:
-    build: .
+    image: cartellino_notify
     container_name: cartellino_notify
     env_file:
       - .env
