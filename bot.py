@@ -25,7 +25,10 @@ from database import (
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Invia un messaggio di benvenuto quando viene eseguito il comando /start."""
     keyboard = [
-        [InlineKeyboardButton("work-end", callback_data="work_end_data")],
+        [
+            InlineKeyboardButton("work-end", callback_data="work_end_data"),
+            InlineKeyboardButton("Set Start Time", callback_data="set_start_time"),
+        ],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     if update.message:
@@ -45,17 +48,25 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         query.answer()
     )  # Risponde alla callback per far sparire l'icona di caricamento
 
+    if not query.message:
+        print("Error: CallbackQuery does not have an associated message.")
+        return
+
+    chat_id = query.message.chat_id
+
     if query.data == "work_end_data":
         await query.edit_message_text(text="Eseguo il comando work-end...")
-        # Esegue il comando CLI 'work-end'
-        output = work_end()
-        if query.message is None:
-            return
-        # Invia l'output del comando come nuovo messaggio
+        output = work_end(chat_id)
         await query.message.reply_text(
             f"<pre>{output}</pre>",
             parse_mode="HTML",
         )
+    elif query.data == "set_start_time":
+        await query.edit_message_text(
+            text="Please enter the start time in 'HH:MM' format."
+        )
+        # We return AWAIT_START_TIME to continue the conversation
+        return AWAIT_START_TIME
 
 
 async def get_chat_ids(bot_token: str) -> None:
@@ -117,7 +128,7 @@ async def notify_work_end(delay: float, bot_token: str, chat_id: str) -> None:
 
 
 async def ask_for_start_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Asks for the start time only if it's not already stored."""
+    """Asks for the start time."""
     if not update.message:
         return ConversationHandler.END
     chat_id = update.message.chat_id
@@ -126,7 +137,6 @@ async def ask_for_start_time(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text(
             f"L'orario di inizio è già impostato per oggi: {start_time}"
         )
-        await notify_work_turn(update, context)
         return ConversationHandler.END
     else:
         await update.message.reply_text(
@@ -196,15 +206,19 @@ def start_bot() -> None:
     application = Application.builder().token(bot_token).build()
 
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler("start", ask_for_start_time)],
+        entry_points=[
+            CommandHandler("set_start", ask_for_start_time),
+            CallbackQueryHandler(button_callback, pattern="^set_start_time$"),
+        ],
         states={
             AWAIT_START_TIME: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_start_time)
             ],
         },
-        fallbacks=[],
+        fallbacks=[CommandHandler("start", start)],
     )
 
+    application.add_handler(CommandHandler("start", start))
     application.add_handler(conv_handler)
     application.add_handler(CallbackQueryHandler(button_callback))
 
