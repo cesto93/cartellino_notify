@@ -3,7 +3,6 @@ import os
 import sys
 from typing import Optional
 import typer
-from dotenv import load_dotenv
 
 from cartellino import time_to_turn_end, turn_end_time
 from database import (
@@ -163,6 +162,5 @@ def help_command(ctx: typer.Context):
 
 
 if __name__ == "__main__":
-    load_dotenv()
     init_db()
     app()
