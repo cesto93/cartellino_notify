@@ -123,7 +123,8 @@ async def ask_for_start_time(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text(
             f"L'orario di inizio è già impostato per oggi: {start_time}"
         )
-        return NOTIFY_WORK_TURN
+        await notify_work_turn(update, context)
+        return ConversationHandler.END
     else:
         if update.message:
             await update.message.reply_text(
@@ -148,16 +149,17 @@ async def handle_start_time(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             f"Orario di inizio impostato su: {message_text}"
         )
 
-    return NOTIFY_WORK_TURN
+    await notify_work_turn(update, context)
+    return ConversationHandler.END
 
 
-async def notify_work_turn(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def notify_work_turn(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     start_time = get_start_time()
     if not start_time:
         await update.message.reply_text(
             "L'orario di inizio non è impostato. Per favore, usa /start per impostarlo."
         )
-        return ConversationHandler.END
+        return
 
     wt = get_setting("work_time") or "07:12"
     lt = get_setting("lunch_time") or "00:30"
@@ -174,11 +176,9 @@ async def notify_work_turn(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     chat_id = os.getenv("TELEGRAM_CHAT_ID")
     if bot_token and chat_id:
         loop.create_task(notify_work_end(remaining_seconds, bot_token, chat_id))
-    return ConversationHandler.END
 
 
 AWAIT_START_TIME = 0
-NOTIFY_WORK_TURN = 1
 
 
 def start_bot() -> None:
