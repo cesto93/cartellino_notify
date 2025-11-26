@@ -100,9 +100,6 @@ def notify(
 
 @app.command()
 def job(
-    start_time: Optional[str] = typer.Argument(
-        None, help="Start time in 'HH:MM' format. Defaults to value stored for today."
-    ),
     work_time: Optional[str] = typer.Option(
         None,
         "--work-time",
@@ -124,22 +121,12 @@ def job(
     """
     Waits until work end and sends a notification.
     """
-    st = start_time or get_start_time()
-    if not st:
-        print(
-            "Error: Start time not provided and no start time stored for today.\n"
-            "Use 'start' command to store it or provide it as an argument."
-        )
-        raise typer.Exit(code=1)
 
     wt = work_time or get_setting("work_time") or "07:12"
     lt = lunch_time or get_setting("lunch_time") or "00:30"
     lrt = leisure_time or get_daily_setting("leisure_time")
 
-    finish_time_str = turn_end_time(st, wt, lt, lrt)
-    print(f"Work turn finishes at {finish_time_str}")
-
-    start_bot(st, wt, lt, lrt)
+    start_bot(wt, lt, lrt)
 
 
 @app.command()
@@ -193,7 +180,8 @@ def help_command(ctx: typer.Context):
     """
     Shows the main help message.
     """
-    typer.echo(ctx.parent.get_help())
+    if ctx.parent is not None:
+        typer.echo(ctx.parent.get_help())
 
 
 if __name__ == "__main__":

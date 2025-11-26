@@ -9,7 +9,7 @@ from telegram.ext import (
 )
 from actions import work_end
 from cartellino import get_remaining_seconds
-from database import store_chat
+from database import get_start_time, store_chat
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -18,10 +18,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         [InlineKeyboardButton("work-end", callback_data="work_end_data")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(
-        "Ciao! Sono il cartellino bot. Usa il pulsante qui sotto per sapere quando finisce il turno di lavoro.",
-        reply_markup=reply_markup,
-    )
+    if update.message:
+        await update.message.reply_text(
+            "Ciao! Sono il cartellino bot. Usa il pulsante qui sotto per sapere quando finisce il turno di lavoro.",
+            reply_markup=reply_markup,
+        )
 
 
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -98,9 +99,7 @@ async def notify_work_end(delay: float, bot_token: str, chat_id: str) -> None:
     await send_telegram_notification(bot_token, chat_id, message)
 
 
-def start_bot(
-    start_time: str, work_time: str, lunch_time: str, leisure_time: str | None
-) -> None:
+def start_bot(work_time: str, lunch_time: str, leisure_time: str | None) -> None:
     """Avvia il bot."""
     bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
     if not bot_token:
@@ -113,14 +112,14 @@ def start_bot(
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CallbackQueryHandler(button_callback))
-
-    remaining_seconds = get_remaining_seconds(
-        start_time, work_time, lunch_time, leisure_time
-    )
-    print(f"Remaining seconds: {remaining_seconds}")
-
-    loop = asyncio.get_event_loop()
-    loop.create_task(notify_work_end(remaining_seconds, bot_token, chat_id))
+    start_time = get_start_time()
+    if start_time:
+        remaining_seconds = get_remaining_seconds(
+            start_time, work_time, lunch_time, leisure_time
+        )
+        print(f"Remaining seconds: {remaining_seconds}")
+        loop = asyncio.get_event_loop()
+        loop.create_task(notify_work_end(remaining_seconds, bot_token, chat_id))
 
     print("Bot started. Listening for commands...")
     application.run_polling()

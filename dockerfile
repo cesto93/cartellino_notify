@@ -1,6 +1,9 @@
 # Use a Python base image
 FROM python:3.11-slim-buster
 
+# Set timezone to Central European Time
+ENV TZ=Europe/Berlin
+
 # Set the working directory inside the container
 WORKDIR /app
 
