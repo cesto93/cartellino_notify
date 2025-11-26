@@ -111,12 +111,6 @@ def job(
         "--lunch-time",
         help="Lunch duration in 'HH:MM' format. Defaults to value in db or '00:30'",
     ),
-    leisure_time: Optional[str] = typer.Option(
-        None,
-        "--leisure-time",
-        help="Leisure duration in 'HH:MM' format to be subtracted from work time. Defaults to value in db.",
-        metavar="HH:MM",
-    ),
 ):
     """
     Waits until work end and sends a notification.
@@ -124,9 +118,8 @@ def job(
 
     wt = work_time or get_setting("work_time") or "07:12"
     lt = lunch_time or get_setting("lunch_time") or "00:30"
-    lrt = leisure_time or get_daily_setting("leisure_time")
 
-    start_bot(wt, lt, lrt)
+    start_bot(wt, lt)
 
 
 @app.command()

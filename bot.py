@@ -13,7 +13,7 @@ from telegram.ext import (
 )
 from actions import work_end
 from cartellino import get_remaining_seconds, turn_end_time
-from database import get_start_time, store_chat, store_start_time
+from database import get_daily_setting, store_chat, store_start_time
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -162,13 +162,15 @@ async def handle_start_time(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 AWAIT_START_TIME = 0
 
 
-def start_bot(work_time: str, lunch_time: str, leisure_time: str | None) -> None:
+def start_bot(work_time: str, lunch_time: str) -> None:
     """Avvia il bot."""
     bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
     if not bot_token:
         raise ValueError("La variabile d'ambiente TELEGRAM_BOT_TOKEN non è impostata.")
 
     application = Application.builder().token(bot_token).build()
+
+    leisure_time = get_daily_setting("leisure_time")
     application.bot_data["work_time"] = work_time
     application.bot_data["lunch_time"] = lunch_time
     application.bot_data["leisure_time"] = leisure_time
