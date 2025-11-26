@@ -50,7 +50,8 @@ def work_end(
     """
     A simple tool to calculate remaining time until work turn finishes.
     """
-    st = start_time or get_start_time()
+    # Using a default chat_id for CLI usage
+    st = start_time or get_start_time(0)
     if not st:
         print(
             "Error: Start time not provided and no start time stored for today.\n"
@@ -60,7 +61,7 @@ def work_end(
 
     wt = work_time or get_setting("work_time") or "07:12"
     lt = lunch_time or get_setting("lunch_time") or "00:30"
-    lrt = leisure_time or get_daily_setting("leisure_time")
+    lrt = leisure_time or get_daily_setting(0, "leisure_time")
 
     finish_time = turn_end_time(st, wt, lt, lrt)
     print(f"Time remaining until work turn finishes at {finish_time}.")
@@ -73,7 +74,8 @@ def start(start_time: str = typer.Argument(..., help="Start time in 'HH:MM' form
     """
     Stores the start time for the current day.
     """
-    store_start_time(start_time)
+    # Using a default chat_id for CLI usage
+    store_start_time(0, start_time)
     print(f"Stored start time for today: {start_time}")
 
 
@@ -141,8 +143,9 @@ def set_config(
     if lunch_time:
         store_setting("lunch_time", lunch_time)
         print(f"Stored lunch_time: {lunch_time}")
-    if leisure_time:  #
-        store_daily_setting("leisure_time", leisure_time)
+    if leisure_time:
+        # Using a default chat_id for CLI usage
+        store_daily_setting(0, "leisure_time", leisure_time)
         print(f"Stored leisure_time: {leisure_time}")
 
 

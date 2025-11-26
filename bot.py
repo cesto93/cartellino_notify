@@ -118,7 +118,10 @@ async def notify_work_end(delay: float, bot_token: str, chat_id: str) -> None:
 
 async def ask_for_start_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Asks for the start time only if it's not already stored."""
-    start_time = get_start_time()
+    if not update.message:
+        return ConversationHandler.END
+    chat_id = update.message.chat_id
+    start_time = get_start_time(chat_id)
     if start_time:
         await update.message.reply_text(
             f"L'orario di inizio è già impostato per oggi: {start_time}"
@@ -126,24 +129,24 @@ async def ask_for_start_time(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await notify_work_turn(update, context)
         return ConversationHandler.END
     else:
-        if update.message:
-            await update.message.reply_text(
-                "Ciao! Per favore, inserisci l'orario di inizio nel formato 'HH:MM'."
-            )
+        await update.message.reply_text(
+            "Ciao! Per favore, inserisci l'orario di inizio nel formato 'HH:MM'."
+        )
     return AWAIT_START_TIME
 
 
 async def handle_start_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handles the start time provided by the user."""
-    message_text = update.message.text if update.message else ""
-    if message_text is None or not re.match(r"^\d{2}:\d{2}$", message_text):
-        if update.message:
-            await update.message.reply_text(
-                "Formato non valido. Per favore, inserisci l'orario come 'HH:MM'."
-            )
+    if not update.message or not update.message.text:
+        return ConversationHandler.END
+    message_text = update.message.text
+    if not re.match(r"^\d{2}:\d{2}$", message_text):
+        await update.message.reply_text(
+            "Formato non valido. Per favore, inserisci l'orario come 'HH:MM'."
+        )
         return AWAIT_START_TIME
-
-    store_start_time(message_text)
+    chat_id = update.message.chat_id
+    store_start_time(chat_id, message_text)
     if update.message:
         await update.message.reply_text(
             f"Orario di inizio impostato su: {message_text}"
@@ -154,7 +157,10 @@ async def handle_start_time(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
 
 async def notify_work_turn(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    start_time = get_start_time()
+    if not update.message:
+        return
+    chat_id = update.message.chat_id
+    start_time = get_start_time(chat_id)
     if not start_time:
         await update.message.reply_text(
             "L'orario di inizio non è impostato. Per favore, usa /start per impostarlo."
@@ -163,7 +169,7 @@ async def notify_work_turn(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     wt = get_setting("work_time") or "07:12"
     lt = get_setting("lunch_time") or "00:30"
-    lrt = get_daily_setting("leisure_time")
+    lrt = get_daily_setting(chat_id, "leisure_time")
 
     finish_time = turn_end_time(start_time, wt, lt, lrt)
     await update.message.reply_text(
@@ -172,10 +178,6 @@ async def notify_work_turn(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     remaining_seconds = get_remaining_seconds(start_time, wt, lt, lrt)
     print(f"Remaining seconds: {remaining_seconds}")
 
-    if not update.message:
-        return
-
-    chat_id = update.message.chat_id
     bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
     loop = asyncio.get_event_loop()
     if bot_token and chat_id:

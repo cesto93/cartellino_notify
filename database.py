@@ -21,6 +21,9 @@ def init_db():
     conn.execute(
         "CREATE TABLE IF NOT EXISTS chats (chat_id INTEGER PRIMARY KEY, name TEXT)"
     )
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS user_settings (chat_id INTEGER, key TEXT, value TEXT, date TEXT, PRIMARY KEY (chat_id, key, date))"
+    )
     conn.commit()
     conn.close()
 
@@ -65,45 +68,57 @@ def store_chat(chat_id: int, name: str) -> None:
     conn.close()
 
 
-def store_start_time(start_time: str) -> None:
-    """Stores the start time for the current day."""
-    conn = get_db_connection()
+def store_start_time(chat_id: int, start_time: str) -> None:
+    """Stores the start time for the current day for a specific chat."""
     today = date.today().isoformat()
+    conn = get_db_connection()
     conn.execute(
-        "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
-        ("start_time", start_time),
-    )
-    conn.execute(
-        "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
-        ("start_time_date", today),
+        "INSERT OR REPLACE INTO user_settings (chat_id, key, value, date) VALUES (?, ?, ?, ?)",
+        (chat_id, "start_time", start_time, today),
     )
     conn.commit()
     conn.close()
 
 
-def get_start_time() -> Optional[str]:
-    """Retrieves the start time if it was stored today."""
+def get_start_time(chat_id: int) -> Optional[str]:
+    """Retrieves the start time for a specific chat if it was stored today."""
     today = date.today().isoformat()
-    stored_date = get_setting("start_time_date")
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT value FROM user_settings WHERE chat_id = ? AND key = ? AND date = ?",
+        (chat_id, "start_time", today),
+    )
+    row = cursor.fetchone()
+    conn.close()
+    return row["value"] if row else None
 
-    if stored_date == today:
-        return get_setting("start_time")
-    else:
-        return None
 
-
-def store_daily_setting(key: str, value: str) -> None:
+def store_daily_setting(chat_id: int, key: str, value: str) -> None:
     """
-    Stores a setting along with the current date, making it valid for the day.
-    """
-    today = date.today().isoformat()
-    store_setting(key, value)
-    store_setting(f"{key}_date", today)
-
-
-def get_daily_setting(key: str) -> Optional[str]:
-    """
-    Retrieves a daily setting if it was stored today; otherwise, returns None.
+    Stores a setting for a specific chat along with the current date, making it valid for the day.
     """
     today = date.today().isoformat()
-    return get_setting(key) if get_setting(f"{key}_date") == today else None
+    conn = get_db_connection()
+    conn.execute(
+        "INSERT OR REPLACE INTO user_settings (chat_id, key, value, date) VALUES (?, ?, ?, ?)",
+        (chat_id, key, value, today),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_daily_setting(chat_id: int, key: str) -> Optional[str]:
+    """
+    Retrieves a daily setting for a specific chat if it was stored today; otherwise, returns None.
+    """
+    today = date.today().isoformat()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT value FROM user_settings WHERE chat_id = ? AND key = ? AND date = ?",
+        (chat_id, key, today),
+    )
+    row = cursor.fetchone()
+    conn.close()
+    return row["value"] if row else None
