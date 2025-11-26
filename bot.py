@@ -1,15 +1,19 @@
 import asyncio
 import os
+import re
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, Bot
 from telegram.ext import (
     Application,
     CommandHandler,
     CallbackQueryHandler,
     ContextTypes,
+    ConversationHandler,
+    MessageHandler,
+    filters,
 )
 from actions import work_end
 from cartellino import get_remaining_seconds
-from database import get_start_time, store_chat
+from database import get_start_time, store_chat, store_start_time
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -106,27 +110,77 @@ async def notify_work_end(delay: float, bot_token: str, chat_id: str) -> None:
     await send_telegram_notification(bot_token, chat_id, message)
 
 
+async def ask_for_start_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Asks for the start time."""
+    if update.message:
+        await update.message.reply_text(
+            "Ciao! Per favore, inserisci l'orario di inizio nel formato 'HH:MM'."
+        )
+    return AWAIT_START_TIME
+
+
+async def handle_start_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handles the start time provided by the user."""
+    message_text = update.message.text if update.message else ""
+    if not re.match(r"^\d{2}:\d{2}$", message_text):
+        if update.message:
+            await update.message.reply_text(
+                "Formato non valido. Per favore, inserisci l'orario come 'HH:MM'."
+            )
+        return AWAIT_START_TIME
+
+    store_start_time(message_text)
+    if update.message:
+        await update.message.reply_text(
+            f"Orario di inizio impostato su: {message_text}"
+        )
+
+    if (
+        context.bot_data
+        and "work_time" in context.bot_data
+        and "lunch_time" in context.bot_data
+        and "leisure_time" in context.bot_data
+    ):
+        wt = context.bot_data["work_time"]
+        lt = context.bot_data["lunch_time"]
+        lrt = context.bot_data["leisure_time"]
+        remaining_seconds = get_remaining_seconds(message_text, wt, lt, lrt)
+        print(f"Remaining seconds: {remaining_seconds}")
+        loop = asyncio.get_event_loop()
+        bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+        chat_id = os.getenv("TELEGRAM_CHAT_ID")
+        if bot_token and chat_id:
+            loop.create_task(notify_work_end(remaining_seconds, bot_token, chat_id))
+
+    return ConversationHandler.END
+
+
+AWAIT_START_TIME = 0
+
+
 def start_bot(work_time: str, lunch_time: str, leisure_time: str | None) -> None:
     """Avvia il bot."""
     bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
     if not bot_token:
         raise ValueError("La variabile d'ambiente TELEGRAM_BOT_TOKEN non è impostata.")
-    chat_id = os.getenv("TELEGRAM_CHAT_ID")
-    if not chat_id:
-        raise ValueError("La variabile d'ambiente TELEGRAM_CHAT_ID non è impostata.")
 
     application = Application.builder().token(bot_token).build()
+    application.bot_data["work_time"] = work_time
+    application.bot_data["lunch_time"] = lunch_time
+    application.bot_data["leisure_time"] = leisure_time
 
-    application.add_handler(CommandHandler("start", start))
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler("start", ask_for_start_time)],
+        states={
+            AWAIT_START_TIME: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_start_time)
+            ],
+        },
+        fallbacks=[],
+    )
+
+    application.add_handler(conv_handler)
     application.add_handler(CallbackQueryHandler(button_callback))
-    start_time = get_start_time()
-    if start_time:
-        remaining_seconds = get_remaining_seconds(
-            start_time, work_time, lunch_time, leisure_time
-        )
-        print(f"Remaining seconds: {remaining_seconds}")
-        loop = asyncio.get_event_loop()
-        loop.create_task(notify_work_end(remaining_seconds, bot_token, chat_id))
 
     print("Bot started. Listening for commands...")
     application.run_polling()
