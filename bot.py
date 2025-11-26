@@ -12,7 +12,7 @@ from telegram.ext import (
     filters,
 )
 from actions import work_end
-from cartellino import get_remaining_seconds
+from cartellino import get_remaining_seconds, turn_end_time
 from database import get_start_time, store_chat, store_start_time
 
 
@@ -122,7 +122,7 @@ async def ask_for_start_time(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def handle_start_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handles the start time provided by the user."""
     message_text = update.message.text if update.message else ""
-    if not re.match(r"^\d{2}:\d{2}$", message_text):
+    if message_text is None or not re.match(r"^\d{2}:\d{2}$", message_text):
         if update.message:
             await update.message.reply_text(
                 "Formato non valido. Per favore, inserisci l'orario come 'HH:MM'."
@@ -146,6 +146,10 @@ async def handle_start_time(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         lrt = context.bot_data["leisure_time"]
         remaining_seconds = get_remaining_seconds(message_text, wt, lt, lrt)
         print(f"Remaining seconds: {remaining_seconds}")
+        finish_time = turn_end_time(message_text, wt, lt, lrt)
+        await update.message.reply_text(
+            f"Attenderò fino alla fine del turno di lavoro e ti notificherò alle {finish_time}."
+        )
         loop = asyncio.get_event_loop()
         bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
         chat_id = os.getenv("TELEGRAM_CHAT_ID")
