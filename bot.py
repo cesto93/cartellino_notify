@@ -1,11 +1,10 @@
 import asyncio
 import os
 import re
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, Bot
+from telegram import ReplyKeyboardMarkup, KeyboardButton, Update, Bot
 from telegram.ext import (
     Application,
     CommandHandler,
-    CallbackQueryHandler,
     ContextTypes,
     ConversationHandler,
     MessageHandler,
@@ -26,11 +25,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Invia un messaggio di benvenuto quando viene eseguito il comando /start."""
     keyboard = [
         [
-            InlineKeyboardButton("work-end", callback_data="work_end_data"),
-            InlineKeyboardButton("Set Start Time", callback_data="set_start_time"),
+            KeyboardButton("Work End"),
+            KeyboardButton("Set Start Time"),
         ],
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     if update.message:
         await update.message.reply_text(
             "Ciao! Sono il cartellino bot. Usa il pulsante qui sotto per sapere quando finisce il turno di lavoro.",
@@ -38,35 +37,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         )
 
 
-async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Analizza la CallbackQuery e gestisce il pulsante premuto."""
-    query = update.callback_query
-    if not query:
+async def handle_work_end(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Gestisce il pulsante Work End."""
+    if not update.message:
         return
 
-    await (
-        query.answer()
-    )  # Risponde alla callback per far sparire l'icona di caricamento
-
-    if not query.message:
-        print("Error: CallbackQuery does not have an associated message.")
-        return
-
-    chat_id = query.message.chat_id
-
-    if query.data == "work_end_data":
-        await query.edit_message_text(text="Eseguo il comando work-end...")
-        output = work_end(chat_id)
-        await query.message.reply_text(
-            f"<pre>{output}</pre>",
-            parse_mode="HTML",
-        )
-    elif query.data == "set_start_time":
-        await query.edit_message_text(
-            text="Please enter the start time in 'HH:MM' format."
-        )
-        # We return AWAIT_START_TIME to continue the conversation
-        return AWAIT_START_TIME
+    chat_id = update.message.chat_id
+    await update.message.reply_text("Eseguo il comando work-end...")
+    output = work_end(chat_id)
+    await update.message.reply_text(
+        f"<pre>{output}</pre>",
+        parse_mode="HTML",
+    )
 
 
 async def get_chat_ids(bot_token: str) -> None:
@@ -208,7 +190,7 @@ def start_bot() -> None:
     conv_handler = ConversationHandler(
         entry_points=[
             CommandHandler("set_start", ask_for_start_time),
-            CallbackQueryHandler(button_callback, pattern="^set_start_time$"),
+            MessageHandler(filters.Regex("^Set Start Time$"), ask_for_start_time),
         ],
         states={
             AWAIT_START_TIME: [
@@ -220,7 +202,7 @@ def start_bot() -> None:
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(conv_handler)
-    application.add_handler(CallbackQueryHandler(button_callback))
+    application.add_handler(MessageHandler(filters.Regex("^Work End$"), handle_work_end))
 
     print("Bot started. Listening for commands...")
     application.run_polling()
