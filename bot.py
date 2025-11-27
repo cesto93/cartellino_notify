@@ -22,21 +22,29 @@ from database import (
 )
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Invia un messaggio di benvenuto quando viene eseguito il comando /start."""
+def get_keyboard(chat_id: int) -> ReplyKeyboardMarkup:
+    """Restituisce la tastiera in base allo stato dell'utente."""
     keyboard = [
         [
-            KeyboardButton("Work End"),
             KeyboardButton("Set Start Time"),
             KeyboardButton("Set Leisure Time"),
         ],
     ]
-    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    if update.message:
-        await update.message.reply_text(
-            "Ciao! Sono il cartellino bot. Usa il pulsante qui sotto per sapere quando finisce il turno di lavoro.",
-            reply_markup=reply_markup,
-        )
+    if get_start_time(chat_id):
+        keyboard[0].insert(0, KeyboardButton("Work End"))
+    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Invia un messaggio di benvenuto quando viene eseguito il comando /start."""
+    if not update.message:
+        return
+    chat_id = update.message.chat_id
+    reply_markup = get_keyboard(chat_id)
+    await update.message.reply_text(
+        "Ciao! Sono il cartellino bot. Usa il pulsante qui sotto per sapere quando finisce il turno di lavoro.",
+        reply_markup=reply_markup,
+    )
 
 
 async def handle_work_end(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -107,9 +115,12 @@ async def handle_start_time(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         return AWAIT_START_TIME
     chat_id = update.message.chat_id
     store_start_time(chat_id, message_text)
+    
+    reply_markup = get_keyboard(chat_id)
     if update.message:
         await update.message.reply_text(
-            f"Orario di inizio impostato su: {message_text}"
+            f"Orario di inizio impostato su: {message_text}",
+            reply_markup=reply_markup,
         )
 
     await notify_work_turn(update, context)
@@ -138,9 +149,12 @@ async def handle_leisure_time(update: Update, context: ContextTypes.DEFAULT_TYPE
         return AWAIT_LEISURE_TIME
     chat_id = update.message.chat_id
     store_daily_setting(chat_id, "leisure_time", message_text)
+    
+    reply_markup = get_keyboard(chat_id)
     if update.message:
         await update.message.reply_text(
-            f"Tempo di svago impostato su: {message_text}"
+            f"Tempo di svago impostato su: {message_text}",
+            reply_markup=reply_markup,
         )
 
     await notify_work_turn(update, context)
