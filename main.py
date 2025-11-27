@@ -15,7 +15,7 @@ from database import (
     store_start_time,
     store_daily_setting,
 )
-from bot import send_telegram_notification, get_chat_ids, start_bot
+from bot import send_telegram_notification, start_bot
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -106,20 +106,6 @@ def job():
     """
 
     start_bot()
-
-
-@app.command()
-def chat_ids():
-    """
-    Gets and stores chat IDs from recent bot interactions.
-    """
-    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    if not bot_token:
-        print("Error: TELEGRAM_BOT_TOKEN environment variable not set.")
-        sys.exit(1)
-
-    print("Getting chat IDs...")
-    asyncio.run(get_chat_ids(bot_token))
 
 
 @app.command(name="set")
