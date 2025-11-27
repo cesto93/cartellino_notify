@@ -20,4 +20,4 @@ def work_end(chat_id: int) -> str:
 
     finish_time = turn_end_time(st, wt, lt, lrt)
     remaining_time = time_to_turn_end(st, wt, lt, lrt)
-    return f"Time remaining until work turn finishes at {finish_time}.\nRemaining time: {remaining_time}"
+    return f"Il turno finisce alle {finish_time}.\nTempo rimanente: {remaining_time}"

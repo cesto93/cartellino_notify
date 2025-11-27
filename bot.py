@@ -16,7 +16,6 @@ from database import (
     get_daily_setting,
     get_setting,
     get_start_time,
-    store_chat,
     store_start_time,
     store_daily_setting,
 )
