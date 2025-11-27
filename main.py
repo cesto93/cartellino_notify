@@ -80,26 +80,6 @@ def start(start_time: str = typer.Argument(..., help="Start time in 'HH:MM' form
 
 
 @app.command()
-def notify(
-    message: str = typer.Argument("Work time is over!", help="Message to send."),
-):
-    """
-    Sends a notification via Telegram bot.
-    """
-    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    if not bot_token:
-        print("Error: TELEGRAM_BOT_TOKEN environment variable not set.")
-        sys.exit(1)
-
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID")
-    if not chat_id:
-        print("Error: TELEGRAM_CHAT_ID environment variable not set.")
-        sys.exit(1)
-
-    asyncio.run(send_telegram_notification(bot_token, chat_id, message))
-
-
-@app.command()
 def job():
     """
     Waits until work end and sends a notification.
