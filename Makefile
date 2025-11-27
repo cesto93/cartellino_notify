@@ -15,3 +15,6 @@ format:
 	ruff format
 requirements:
 	uv pip compile pyproject.toml -o requirements.txt
+run:
+	uv run main.py job
+
