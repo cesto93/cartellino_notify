@@ -64,7 +64,7 @@ def work_end(
     lrt = leisure_time or get_daily_setting(0, "leisure_time")
 
     finish_time = turn_end_time(st, wt, lt, lrt)
-    print(f"Time remaining until work turn finishes at {finish_time}.")
+    print(f"Work turn finishes at {finish_time}.")
     remaining_time = time_to_turn_end(st, wt, lt, lrt)
     print(f"Remaining time: {remaining_time}")
 
