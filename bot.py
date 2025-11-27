@@ -18,6 +18,7 @@ from database import (
     get_start_time,
     store_chat,
     store_start_time,
+    store_daily_setting,
 )
 
 
@@ -27,6 +28,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         [
             KeyboardButton("Work End"),
             KeyboardButton("Set Start Time"),
+            KeyboardButton("Set Leisure Time"),
         ],
     ]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
@@ -148,6 +150,37 @@ async def handle_start_time(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     return ConversationHandler.END
 
 
+async def ask_for_leisure_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Asks for the leisure time."""
+    if not update.message:
+        return ConversationHandler.END
+    await update.message.reply_text(
+        "Inserisci il tempo di svago nel formato 'HH:MM'."
+    )
+    return AWAIT_LEISURE_TIME
+
+
+async def handle_leisure_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handles the leisure time provided by the user."""
+    if not update.message or not update.message.text:
+        return ConversationHandler.END
+    message_text = update.message.text
+    if not re.match(r"^\d{2}:\d{2}$", message_text):
+        await update.message.reply_text(
+            "Formato non valido. Per favore, inserisci l'orario come 'HH:MM'."
+        )
+        return AWAIT_LEISURE_TIME
+    chat_id = update.message.chat_id
+    store_daily_setting(chat_id, "leisure_time", message_text)
+    if update.message:
+        await update.message.reply_text(
+            f"Tempo di svago impostato su: {message_text}"
+        )
+
+    await notify_work_turn(update, context)
+    return ConversationHandler.END
+
+
 async def notify_work_turn(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message:
         return
@@ -177,6 +210,7 @@ async def notify_work_turn(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 
 AWAIT_START_TIME = 0
+AWAIT_LEISURE_TIME = 1
 
 
 def start_bot() -> None:
@@ -191,10 +225,14 @@ def start_bot() -> None:
         entry_points=[
             CommandHandler("set_start", ask_for_start_time),
             MessageHandler(filters.Regex("^Set Start Time$"), ask_for_start_time),
+            MessageHandler(filters.Regex("^Set Leisure Time$"), ask_for_leisure_time),
         ],
         states={
             AWAIT_START_TIME: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_start_time)
+            ],
+            AWAIT_LEISURE_TIME: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_leisure_time)
             ],
         },
         fallbacks=[CommandHandler("start", start)],
