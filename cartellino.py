@@ -101,7 +101,7 @@ def time_to_turn_end(
     return f"Remaining time: {hours:02}h:{minutes:02}m"
 
 
-def get_remaining_seconds(
+def seconds_to_turn_end(
     start_time_str: str,
     work_time_str: str,
     lunch_time_str: str,
@@ -129,3 +129,36 @@ def get_remaining_seconds(
         year=current_time.year, month=current_time.month, day=current_time.day
     )
     return max(0, (finish_time - current_time).total_seconds())
+
+
+def seconds_to_liquidatable_overtime(
+    start_time_str: str,
+    work_time_str: str,
+    lunch_time_str: str,
+    leisure_time_str: Optional[str] = None,
+) -> float:
+    """
+    Calculates the remaining seconds until liquidatable overtime begins.
+    Liquidatable overtime starts 30 minutes after the work turn finishes.
+
+    Args:
+        start_time_str: The start time of the work shift in 'HH:MM' format.
+        work_time_str: The total duration of work in 'HH:MM' format.
+        lunch_time_str: The duration of the lunch break in 'HH:MM' format.
+        leisure_time_str: The duration of leisure time in 'HH:MM' format. It's optional.
+
+    Returns:
+        The remaining seconds until liquidatable overtime begins (30 minutes after work end).
+    """
+    finish_time_str = turn_end_time(
+        start_time_str, work_time_str, lunch_time_str, leisure_time_str
+    )
+    time_format = "%H:%M"
+    finish_time = datetime.strptime(finish_time_str, time_format)
+    current_time = datetime.now()
+    finish_time = finish_time.replace(
+        year=current_time.year, month=current_time.month, day=current_time.day
+    )
+    # Add 30 minutes to get the liquidatable overtime threshold
+    liquidatable_time = finish_time + timedelta(minutes=30)
+    return max(0, (liquidatable_time - current_time).total_seconds())

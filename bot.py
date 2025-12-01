@@ -12,7 +12,7 @@ from telegram.ext import (
     filters,
 )
 from actions import work_end
-from cartellino import get_remaining_seconds, turn_end_time
+from cartellino import seconds_to_turn_end, turn_end_time
 from database import (
     get_daily_setting,
     get_setting,
@@ -209,7 +209,7 @@ async def notify_work_turn(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     await update.message.reply_text(
         f"Attenderò fino alla fine del turno di lavoro e ti notificherò alle {finish_time}."
     )
-    remaining_seconds = get_remaining_seconds(start_time, wt, lt, lrt)
+    remaining_seconds = seconds_to_turn_end(start_time, wt, lt, lrt)
     print(f"Remaining seconds: {remaining_seconds}")
 
     bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
