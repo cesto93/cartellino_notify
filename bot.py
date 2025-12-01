@@ -12,7 +12,7 @@ from telegram.ext import (
     filters,
 )
 from actions import work_end
-from cartellino import seconds_to_turn_end, turn_end_time
+from cartellino import seconds_to_turn_end, turn_end_time, seconds_to_liquidatable_overtime
 from database import (
     get_daily_setting,
     get_setting,
@@ -32,6 +32,7 @@ def get_keyboard(chat_id: int) -> ReplyKeyboardMarkup:
     ]
     if get_start_time(chat_id):
         keyboard[0].insert(0, KeyboardButton("Work End"))
+        keyboard.append([KeyboardButton("Notify Liquidated Overtime")])
     else:
         keyboard[0].insert(0, KeyboardButton("I'm Arrived"))
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
@@ -110,6 +111,13 @@ async def send_telegram_notification(
 
 async def notify_work_end(delay: float, bot_token: str, chat_id: str) -> None:
     message = "Work time is over!"
+    await asyncio.sleep(delay)
+    await send_telegram_notification(bot_token, chat_id, message)
+
+
+async def notify_liquidated_overtime(delay: float, bot_token: str, chat_id: str) -> None:
+    """Sends a notification when liquidated overtime threshold is reached."""
+    message = "⏰ Liquidated overtime threshold reached! (30 minutes after work end)"
     await asyncio.sleep(delay)
     await send_telegram_notification(bot_token, chat_id, message)
 
@@ -218,6 +226,47 @@ async def notify_work_turn(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         loop.create_task(notify_work_end(remaining_seconds, bot_token, str(chat_id)))
 
 
+async def handle_notify_liquidated_overtime(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handles the Notify Liquidated Overtime button."""
+    if not update.message:
+        return
+
+    chat_id = update.message.chat_id
+    start_time = get_start_time(chat_id)
+    
+    if not start_time:
+        await update.message.reply_text(
+            "L'orario di inizio non è impostato. Per favore, imposta prima l'orario di inizio."
+        )
+        return
+
+    wt = get_setting("work_time") or "07:12"
+    lt = get_setting("lunch_time") or "00:30"
+    lrt = get_daily_setting(chat_id, "leisure_time")
+
+    remaining_seconds = seconds_to_liquidatable_overtime(start_time, wt, lt, lrt)
+    
+    if remaining_seconds <= 0:
+        await update.message.reply_text(
+            "La soglia di straordinario liquidabile è già stata raggiunta!"
+        )
+        return
+    
+    # Calculate the time when liquidated overtime will be reached
+    from datetime import datetime, timedelta
+    liquidated_time = datetime.now() + timedelta(seconds=remaining_seconds)
+    liquidated_time_str = liquidated_time.strftime("%H:%M")
+    
+    await update.message.reply_text(
+        f"Ti notificherò quando verrà raggiunta la soglia di straordinario liquidabile alle {liquidated_time_str} (30 minuti dopo la fine del turno)."
+    )
+    
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    loop = asyncio.get_event_loop()
+    if bot_token and chat_id:
+        loop.create_task(notify_liquidated_overtime(remaining_seconds, bot_token, str(chat_id)))
+
+
 AWAIT_START_TIME = 0
 AWAIT_LEISURE_TIME = 1
 
@@ -251,6 +300,7 @@ def start_bot() -> None:
     application.add_handler(conv_handler)
     application.add_handler(MessageHandler(filters.Regex("^Work End$"), handle_work_end))
     application.add_handler(MessageHandler(filters.Regex("^I'm Arrived$"), handle_im_arrived))
+    application.add_handler(MessageHandler(filters.Regex("^Notify Liquidated Overtime$"), handle_notify_liquidated_overtime))
 
     print("Bot started. Listening for commands...")
     application.run_polling()
