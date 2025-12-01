@@ -1,5 +1,6 @@
 import asyncio
 import os
+from datetime import datetime
 import re
 from telegram import ReplyKeyboardMarkup, KeyboardButton, Update, Bot
 from telegram.ext import (
@@ -31,6 +32,8 @@ def get_keyboard(chat_id: int) -> ReplyKeyboardMarkup:
     ]
     if get_start_time(chat_id):
         keyboard[0].insert(0, KeyboardButton("Work End"))
+    else:
+        keyboard[0].insert(0, KeyboardButton("I'm Arrived"))
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
 
@@ -58,6 +61,33 @@ async def handle_work_end(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         f"<pre>{output}</pre>",
         parse_mode="HTML",
     )
+
+
+async def handle_im_arrived(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handles the I'm Arrived button - sets start time to current time."""
+    if not update.message:
+        return
+
+    chat_id = update.message.chat_id
+    start_time = get_start_time(chat_id)
+    
+    if start_time:
+        await update.message.reply_text(
+            f"L'orario di inizio è già impostato per oggi: {start_time}"
+        )
+        return
+    
+    # Get current time in HH:MM format
+    current_time = datetime.now().strftime("%H:%M")
+    store_start_time(chat_id, current_time)
+    
+    reply_markup = get_keyboard(chat_id)
+    await update.message.reply_text(
+        f"Benvenuto! Orario di inizio impostato su: {current_time}",
+        reply_markup=reply_markup,
+    )
+    
+    await notify_work_turn(update, context)
 
 
 async def send_telegram_notification(
@@ -220,6 +250,7 @@ def start_bot() -> None:
     application.add_handler(CommandHandler("start", start))
     application.add_handler(conv_handler)
     application.add_handler(MessageHandler(filters.Regex("^Work End$"), handle_work_end))
+    application.add_handler(MessageHandler(filters.Regex("^I'm Arrived$"), handle_im_arrived))
 
     print("Bot started. Listening for commands...")
     application.run_polling()
