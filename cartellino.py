@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
+# Threshold in minutes after work end time when overtime becomes liquidatable
+LIQUIDATABLE_OVERTIME_THRESHOLD_MINUTES = 30
+
 
 def turn_end_time(
     start_time_str: str,
@@ -89,7 +92,7 @@ def time_to_turn_end(
         overtime_hours, overtime_minutes = divmod(total_overtime_minutes, 60)
         overtime_str = f"{overtime_hours:02}h:{overtime_minutes:02}m"
 
-        if total_overtime_minutes > 30:
+        if total_overtime_minutes > LIQUIDATABLE_OVERTIME_THRESHOLD_MINUTES:
             return f"Liquidatable Overtime: {overtime_str}"
         else:
             return f"Overtime: {overtime_str}"
@@ -159,6 +162,6 @@ def seconds_to_liquidatable_overtime(
     finish_time = finish_time.replace(
         year=current_time.year, month=current_time.month, day=current_time.day
     )
-    # Add 30 minutes to get the liquidatable overtime threshold
-    liquidatable_time = finish_time + timedelta(minutes=30)
+    # Add threshold minutes to get the liquidatable overtime threshold
+    liquidatable_time = finish_time + timedelta(minutes=LIQUIDATABLE_OVERTIME_THRESHOLD_MINUTES)
     return max(0, (liquidatable_time - current_time).total_seconds())
