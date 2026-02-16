@@ -1,8 +1,0 @@
-services:
-  cartellino_notify:
-    image: cartellino_notify
-    container_name: cartellino_notify
-    env_file:
-      - .env
-    # You might want to specify a command here, e.g., to run your main.py
-    # command: python main.py job

@@ -4,9 +4,7 @@
 
 ## 🚀 Project Overview
 
-The project provides two main interfaces:
-1.  **CLI Tool**: A command-line interface for manual checks and configuration.
-2.  **Telegram Bot**: An interactive bot that allows users to log their start time and receive notifications when their shift ends or when they reach the "liquidated overtime" threshold.
+The project is a **Flutter mobile & web app** with a premium dark UI. Users can log their start time and receive local notifications when their shift ends or when they reach the "liquidated overtime" threshold.
 
 ## 🛠️ Core Functionality
 
@@ -15,71 +13,55 @@ The project provides two main interfaces:
     -   Work Duration (Default: 07:12)
     -   Lunch Break (Default: 00:30)
     -   Leisure Time (Optional HH:MM to subtract from work time)
--   **Automated Notifications**:
-    -   **Shift End**: Notifies the user via Telegram when the work duration is reached.
+-   **Automated Local Notifications**:
+    -   **Shift End**: Notifies the user when the work duration is reached.
     -   **Liquidated Overtime**: Notifies when the user has exceeded the shift end by 30 minutes (the threshold for liquidatable overtime).
--   **Persistent Storage**: Uses a local SQLite database to store user settings, chat IDs, and daily start times.
+-   **Persistent Storage**: Uses a local SQLite database to store user settings and daily start times.
 
 ## 📁 Project Structure
 
--   `main.py`: Entry point for the CLI tool (built with `typer`).
--   `bot.py`: Implementation of the Telegram bot (built with `python-telegram-bot`).
--   `cartellino.py`: Core logic for time calculations and shift management.
--   `database.py`: Database interaction layer using SQLite.
--   `actions.py`: Shared business logic actions used by both CLI and Bot.
--   `Dockerfile` & `docker-compose.yml`: Configuration for containerized deployment.
--   `cartellino.db`: SQLite database file.
+```
+lib/
+├── main.dart                          # App entry point, sqflite web init, Provider setup
+├── theme.dart                         # Design system (AppColors, gradients, ThemeData)
+├── screens/
+│   └── home_screen.dart               # Main dashboard with progress ring, info cards, action buttons
+├── services/
+│   ├── app_state.dart                 # ChangeNotifier state management, timer, recalculation
+│   ├── cartellino_service.dart        # Pure Dart time calculation logic (port of cartellino.py)
+│   ├── database_service.dart          # SQLite persistence layer (port of database.py)
+│   └── notification_service.dart      # Local notification scheduling (replaces Telegram)
+└── widgets/
+    └── components.dart                # Reusable widgets: GlassCard, ProgressRing, GradientButton, etc.
+```
 
 ## 📊 Database Schema
 
-The system uses three main tables:
+The system uses two main tables:
 -   `settings`: Global configurations (e.g., default `work_time`, `lunch_time`).
--   `chats`: Registry of authorized Telegram chat IDs.
--   `user_settings`: Store daily specific values like `start_time` and `leisure_time` (keyed by `chat_id` and `date`).
+-   `user_settings`: Store daily specific values like `start_time` and `leisure_time` (keyed by `date`).
 
 ## ⚙️ Setup and Usage
 
 ### Prerequisites
--   Python 3.10+
--   A Telegram Bot Token (set as `TELEGRAM_BOT_TOKEN` in `.env`)
+-   Flutter 3.x+
+-   Android SDK / Xcode (for mobile) or Chrome (for web)
 
-### Running the CLI
+### Running the app
 ```bash
-# Set today's start time
-python main.py start 09:00
-
-# Check remaining time
-python main.py work-end
-
-# Show current config
-python main.py config
+flutter pub get
+flutter run
 ```
 
-### Running the Telegram Bot
-```bash
-python main.py job
-# OR
-python bot.py
-```
-
-### Docker Deployment
-```bash
-docker compose up -d
-```
-
-### Deployment & Automation (Makefile)
-Common tasks are automated via the `Makefile`:
-- `make run`: Starts the Telegram bot using `uv`.
-- `make docker-build`: Builds the Docker image.
-- `make start` / `make stop`: Manage the containerized application.
-- `make format`: Formats code using `ruff`.
-- `make railway-start`: Deploys the application to [Railway](https://railway.app/).
+### Target platforms
+-   Android
+-   iOS
+-   Web
 
 ## 🧰 Tech Stack
 
--   **Language**: Python
--   **CLI Framework**: [Typer](https://typer.tiangolo.com/)
--   **Bot Library**: [python-telegram-bot](https://python-telegram-bot.org/)
--   **Database**: SQLite
--   **Containerization**: Docker & Docker Compose
--   **Package Manager**: `uv` or `pip`
+-   **Framework**: Flutter (Dart)
+-   **State Management**: Provider + ChangeNotifier
+-   **Database**: sqflite (+ sqflite_common_ffi_web for web)
+-   **Notifications**: flutter_local_notifications
+-   **Typography**: Google Fonts (Inter)
