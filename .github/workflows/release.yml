@@ -34,6 +34,16 @@ jobs:
       - name: Build APK
         run: flutter build apk --release --split-per-abi
 
+      - name: Rename APKs
+        run: |
+          APP_NAME=$(grep -e '^name:' pubspec.yaml | awk '{print $2}' | tr -d '\r')
+          VERSION=$(grep -e '^version:' pubspec.yaml | awk '{print $2}' | tr -d '\r')
+          cd build/app/outputs/flutter-apk
+          for file in app-*.apk; do
+            new_name="${APP_NAME}-${VERSION}-${file#app-}"
+            mv "$file" "$new_name"
+          done
+
       - name: Upload APKs to Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
