@@ -1,24 +1,20 @@
 # Cartellino Notify
 
-**Cartellino Notify** is a productivity tool designed to help users track their work hours, calculate when their work shift will end, and receive timely notifications. The name "Cartellino" refers to the Italian term for a work time card or clock-in card.
+Cartellino Notify is a tool for users to track work hours, calculate when their work shift will end, and receive timely notifications.
 
-## 🚀 Project Overview
+## Core Functionality
 
-The project is a **Flutter mobile & web app** with a premium dark UI. Users can log their start time and receive local notifications when their shift ends or when they reach the "liquidated overtime" threshold.
-
-## 🛠️ Core Functionality
-
--   **Work End Calculation**: Calculates the exact time a shift ends based on:
+-   Work End Calculation: Calculates the exact time a shift ends based on:
     -   Start Time (HH:MM)
     -   Work Duration (Default: 07:12)
     -   Lunch Break (Default: 00:30)
     -   Leisure Time (Optional HH:MM to subtract from work time)
--   **Automated Local Notifications**:
-    -   **Shift End**: Notifies the user when the work duration is reached.
-    -   **Liquidated Overtime**: Notifies when the user has exceeded the shift end by 30 minutes (the threshold for liquidatable overtime).
--   **Persistent Storage**: Uses a local SQLite database to store user settings and daily start times.
+-   Automated Local Notifications:
+    -   Shift End: Notifies the user when the work duration is reached.
+    -   Liquidated Overtime: Notifies when the user has exceeded the shift end by 30 minutes (the threshold for liquidatable overtime).
+-   Persistent Storage: Uses a local SQLite database to store user settings and daily start times.
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 lib/
@@ -35,13 +31,13 @@ lib/
     └── components.dart                # Reusable widgets: GlassCard, ProgressRing, GradientButton, etc.
 ```
 
-## 📊 Database Schema
+## Database Schema
 
 The system uses two main tables:
 -   `settings`: Global configurations (e.g., default `work_time`, `lunch_time`).
 -   `user_settings`: Store daily specific values like `start_time` and `leisure_time` (keyed by `date`).
 
-## ⚙️ Setup and Usage
+## Setup and Usage
 
 ### Prerequisites
 -   Flutter 3.x+
@@ -58,10 +54,10 @@ flutter run
 -   iOS
 -   Web
 
-## 🧰 Tech Stack
+## Tech Stack
 
--   **Framework**: Flutter (Dart)
--   **State Management**: Provider + ChangeNotifier
--   **Database**: sqflite (+ sqflite_common_ffi_web for web)
--   **Notifications**: flutter_local_notifications
--   **Typography**: Google Fonts (Inter)
+-   Framework: Flutter (Dart)
+-   State Management: Provider + ChangeNotifier
+-   Database: sqflite (+ sqflite_common_ffi_web for web)
+-   Notifications: flutter_local_notifications
+-   Typography: Google Fonts (Inter)
