@@ -7,6 +7,8 @@ library;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -19,6 +21,8 @@ class NotificationService {
 
   Future<void> init() async {
     if (_isInitialized || kIsWeb) return;
+
+    tz.initializeTimeZones();
 
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
@@ -40,9 +44,9 @@ class NotificationService {
     if (kIsWeb) return;
 
     // Android 13+ runtime permission
-    await _plugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestNotificationsPermission();
+    final androidImplementation = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    await androidImplementation?.requestNotificationsPermission();
+    await androidImplementation?.requestExactAlarmsPermission();
 
     // iOS permission
     await _plugin
@@ -61,30 +65,32 @@ class NotificationService {
 
     await _cancelNotification(id);
 
-    // Use a simple delayed show approach since we only need relative delays
-    Future.delayed(delay, () async {
-      await _plugin.show(
-        id: id,
-        title: title,
-        body: body,
-        notificationDetails: const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'cartellino_channel',
-            'Cartellino Notify',
-            channelDescription: 'Work shift notifications',
-            importance: Importance.max,
-            priority: Priority.high,
-            playSound: true,
-            enableVibration: true,
-          ),
-          iOS: DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
+    // Schedule notification in the background
+    final scheduledDate = tz.TZDateTime.now(tz.local).add(delay);
+
+    await _plugin.zonedSchedule(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: scheduledDate,
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'cartellino_channel',
+          'Cartellino Notify',
+          channelDescription: 'Work shift notifications',
+          importance: Importance.max,
+          priority: Priority.high,
+          playSound: true,
+          enableVibration: true,
         ),
-      );
-    });
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+    );
   }
 
   /// Schedule work-end notification.
