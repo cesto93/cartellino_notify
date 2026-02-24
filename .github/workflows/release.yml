@@ -45,9 +45,15 @@ jobs:
           done
 
       - name: Upload APKs to Release
-        uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: build/app/outputs/flutter-apk/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          # Delete existing assets with the same name to allow re-runs
+          for file in build/app/outputs/flutter-apk/*.apk; do
+            asset_name=$(basename "$file")
+            gh release delete-asset "$TAG" "$asset_name" --yes 2>/dev/null || true
+          done
+          # Upload all APKs
+          gh release upload "$TAG" build/app/outputs/flutter-apk/*.apk --clobber
