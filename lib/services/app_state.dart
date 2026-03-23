@@ -61,6 +61,9 @@ class AppState extends ChangeNotifier {
     await _notifications.init();
     await _notifications.requestPermissions();
     await _loadFromDb();
+    if (_startTime != null) {
+      await _scheduleNotifications();
+    }
     _startTicker();
   }
 

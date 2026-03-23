@@ -37,6 +37,20 @@ class NotificationService {
     );
 
     await _plugin.initialize(settings: initSettings);
+
+    if (!kIsWeb) {
+      final androidImplementation =
+          _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      await androidImplementation?.createNotificationChannel(const AndroidNotificationChannel(
+        'cartellino_channel',
+        'Cartellino Notify',
+        description: 'Work shift notifications',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+      ));
+    }
+
     _isInitialized = true;
   }
 
