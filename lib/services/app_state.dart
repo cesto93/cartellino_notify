@@ -32,8 +32,8 @@ class AppState extends ChangeNotifier {
   String _lunchTime = '00:30';
   String get lunchTime => _lunchTime;
 
-  String? _leisureTime;
-  String? get leisureTime => _leisureTime;
+  String _minTime = '06:00';
+  String get minTime => _minTime;
 
   ShiftStatus _status = ShiftStatus.notStarted;
   ShiftStatus get status => _status;
@@ -46,6 +46,9 @@ class AppState extends ChangeNotifier {
 
   String _liquidatableTimeDisplay = '--:--';
   String get liquidatableTimeDisplay => _liquidatableTimeDisplay;
+
+  String _minEndTimeDisplay = '--:--';
+  String get minEndTimeDisplay => _minEndTimeDisplay;
 
   bool _notificationsScheduled = false;
   bool get notificationsScheduled => _notificationsScheduled;
@@ -70,8 +73,8 @@ class AppState extends ChangeNotifier {
   Future<void> _loadFromDb() async {
     _workTime = await _db.getSetting('work_time') ?? '07:12';
     _lunchTime = await _db.getSetting('lunch_time') ?? '00:30';
+    _minTime = await _db.getSetting('min_time') ?? '06:00';
     _startTime = await _db.getStartTime();
-    _leisureTime = await _db.getDailySetting('leisure_time');
     _recalculate();
     notifyListeners();
   }
@@ -111,15 +114,6 @@ class AppState extends ChangeNotifier {
     await _scheduleNotifications();
   }
 
-  /// Set leisure time for today.
-  Future<void> setLeisureTime(String time) async {
-    _leisureTime = time;
-    await _db.storeDailySetting('leisure_time', time);
-    _recalculate();
-    notifyListeners();
-    await _scheduleNotifications();
-  }
-
   /// Update global work time setting.
   Future<void> setWorkTime(String time) async {
     _workTime = time;
@@ -138,22 +132,22 @@ class AppState extends ChangeNotifier {
     if (_startTime != null) await _scheduleNotifications();
   }
 
-  /// Clear leisure time for today.
-  Future<void> clearLeisureTime() async {
-    _leisureTime = null;
-    await _db.clearDailySetting('leisure_time');
+  /// Update global minimum work time setting.
+  /// This is the minimum time to stay at work when recovering another day
+  /// (less than the full work time).
+  Future<void> setMinTime(String time) async {
+    _minTime = time;
+    await _db.storeSetting('min_time', time);
     _recalculate();
     notifyListeners();
     if (_startTime != null) await _scheduleNotifications();
   }
 
-  /// Reset the day (clear start time + leisure time).
+  /// Reset the day (clear start time).
   Future<void> resetDay() async {
     _startTime = null;
-    _leisureTime = null;
     _notificationsScheduled = false;
     await _db.clearDailySetting('start_time');
-    await _db.clearDailySetting('leisure_time');
     await _notifications.cancelAll();
     _recalculate();
     notifyListeners();
@@ -167,6 +161,7 @@ class AppState extends ChangeNotifier {
       _endTimeDisplay = '--:--';
       _remainingDisplay = '';
       _liquidatableTimeDisplay = '--:--';
+      _minEndTimeDisplay = '--:--';
       _progress = 0;
       return;
     }
@@ -175,9 +170,15 @@ class AppState extends ChangeNotifier {
       _startTime!,
       workTimeStr: _workTime,
       lunchTimeStr: _lunchTime,
-      leisureTimeStr: _leisureTime,
     );
     _endTimeDisplay = formatTime(endDt);
+
+    final minEndDt = minTurnEndDateTime(
+      _startTime!,
+      minTimeStr: _minTime,
+      lunchTimeStr: _lunchTime,
+    );
+    _minEndTimeDisplay = formatTime(minEndDt);
 
     final liquidatableDt = endDt.add(
       const Duration(minutes: liquidatableOvertimeThresholdMinutes),
@@ -188,14 +189,12 @@ class AppState extends ChangeNotifier {
       _startTime!,
       workTimeStr: _workTime,
       lunchTimeStr: _lunchTime,
-      leisureTimeStr: _leisureTime,
     );
 
     _remainingDisplay = workTimeStatus(
       _startTime!,
       workTimeStr: _workTime,
       lunchTimeStr: _lunchTime,
-      leisureTimeStr: _leisureTime,
     );
 
     // Calculate progress (0.0 = just started → 1.0 = shift done)
@@ -232,15 +231,23 @@ class AppState extends ChangeNotifier {
       _startTime!,
       workTimeStr: _workTime,
       lunchTimeStr: _lunchTime,
-      leisureTimeStr: _leisureTime,
+    );
+
+    final secToMin = secondsToMinEnd(
+      _startTime!,
+      minTimeStr: _minTime,
+      lunchTimeStr: _lunchTime,
     );
 
     final secToLiq = secondsToLiquidatableOvertime(
       _startTime!,
       workTimeStr: _workTime,
       lunchTimeStr: _lunchTime,
-      leisureTimeStr: _leisureTime,
     );
+
+    if (secToMin > 0) {
+      await _notifications.scheduleMinEnd(Duration(seconds: secToMin.round()));
+    }
 
     if (secToEnd > 0) {
       await _notifications.scheduleWorkEnd(Duration(seconds: secToEnd.round()));

@@ -7,23 +7,26 @@
 - **"I'm Arrived" button** — Sets start time to the current time
 - **Manual Start Time** — Enter a custom start time in HH:MM format
 - **Live Countdown** — Real-time progress ring showing shift progress
-- **Work End Calculation** — Based on start time, work duration, lunch break, and leisure time
+- **Work End Calculation** — Based on start time, work duration, and lunch break
+- **Minimum Time** — Configurable min time for early leave when recovering another day
 - **Overtime Tracking** — Detects overtime and liquidatable overtime (30+ min after shift end)
-- **Local Notifications** — Get notified when your shift ends and when overtime becomes liquidatable
+- **Local Notifications** — Get notified at min end, shift end, and when overtime becomes liquidatable
 - **Persistent Storage** — SQLite database stores your settings across sessions
-- **Settings** — Configure default work duration and lunch break
+- **Settings** — Configure default work duration, lunch break, and min time
 
 ## 🛠️ Core Calculation
 
 The app calculates shift end as:
 
 ```
-Shift End = Start Time + Work Duration + Lunch Break - Leisure Time
+Shift End = Start Time + Work Duration + Lunch Break
+Min End   = Start Time + Min Time + Lunch Break
 ```
 
 Defaults:
 - **Work Duration**: 07:12
 - **Lunch Break**: 00:30
+- **Min Time**: 06:00 (minimum to stay when recovering another day, less than full time)
 
 ## 📁 Project Structure
 
@@ -44,8 +47,8 @@ lib/
 
 ## 📊 Database Schema
 
-- **`settings`** — Global config (work_time, lunch_time)
-- **`user_settings`** — Daily values (start_time, leisure_time) keyed by date
+- **`settings`** — Global config (work_time, lunch_time, min_time)
+- **`user_settings`** — Daily values (start_time) keyed by date
 
 ## ⚙️ Setup
 

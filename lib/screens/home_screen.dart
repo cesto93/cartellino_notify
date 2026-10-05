@@ -118,19 +118,17 @@ class HomeScreen extends StatelessWidget {
                               ),
                               const Divider(color: AppColors.bgCardLight, height: 20),
                               InfoRow(
+                                label: 'Min End',
+                                value: state.minEndTimeDisplay,
+                                icon: Icons.coffee_rounded,
+                              ),
+                              const Divider(color: AppColors.bgCardLight, height: 20),
+                              InfoRow(
                                 label: 'Liq. Overtime',
                                 value: state.liquidatableTimeDisplay,
                                 icon: Icons.timer_rounded,
                                 valueColor: AppColors.accent,
                               ),
-                              if (state.leisureTime != null) ...[
-                                const Divider(color: AppColors.bgCardLight, height: 20),
-                                InfoRow(
-                                  label: 'Leisure Time',
-                                  value: state.leisureTime!,
-                                  icon: Icons.coffee_rounded,
-                                ),
-                              ],
                             ],
                           ),
                         ),
@@ -219,50 +217,17 @@ class HomeScreen extends StatelessWidget {
 
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: GradientButton(
-                label: 'Leisure',
-                icon: Icons.coffee_rounded,
-                onPressed: () => _showTimeInputDialog(
-                  context,
-                  title: 'Set Leisure Time',
-                  hint: 'e.g. 00:15',
-                  onSubmit: (v) => state.setLeisureTime(v),
-                ),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF6C63FF), Color(0xFF9B59F7)],
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: GradientButton(
-                label: 'Work End',
-                icon: Icons.info_outline_rounded,
-                onPressed: () => _showWorkEndDialog(context, state),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF2196F3), Color(0xFF4FC3F7)],
-                ),
-              ),
-            ),
-          ],
-        ),
-        if (state.leisureTime != null) ...[
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: GradientButton(
-              label: 'Clear Leisure Time',
-              icon: Icons.clear_rounded,
-              onPressed: () => state.clearLeisureTime(),
-              gradient: const LinearGradient(
-                colors: [Color(0xFF455A64), Color(0xFF78909C)],
-              ),
+        SizedBox(
+          width: double.infinity,
+          child: GradientButton(
+            label: 'Work End',
+            icon: Icons.info_outline_rounded,
+            onPressed: () => _showWorkEndDialog(context, state),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF2196F3), Color(0xFF4FC3F7)],
             ),
           ),
-        ],
+        ),
       ],
     );
   }
@@ -388,6 +353,7 @@ class HomeScreen extends StatelessWidget {
 
   void _showWorkEndDialog(BuildContext context, AppState state) {
     final endTime = state.endTimeDisplay;
+    final minEndTime = state.minEndTimeDisplay;
     final remaining = state.remainingDisplay;
     showModalBottomSheet(
       context: context,
@@ -415,6 +381,15 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 20),
               const Icon(Icons.schedule_rounded, size: 48, color: AppColors.accent),
               const SizedBox(height: 16),
+              Text(
+                'Min end at $minEndTime',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 4),
               Text(
                 'Shift ends at $endTime',
                 style: const TextStyle(
@@ -515,6 +490,21 @@ class HomeScreen extends StatelessWidget {
                   );
                 },
               ),
+              const SizedBox(height: 12),
+              _SettingsTile(
+                icon: Icons.timer_outlined,
+                label: 'Min Time',
+                value: state.minTime,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showTimeInputDialog(
+                    context,
+                    title: 'Min Time',
+                    hint: '06:00',
+                    onSubmit: (v) => state.setMinTime(v),
+                  );
+                },
+              ),
               const SizedBox(height: 24),
             ],
           ),
@@ -535,7 +525,7 @@ class HomeScreen extends StatelessWidget {
             style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
           ),
           content: const Text(
-            'This will clear your start time and leisure time for today.',
+            'This will clear your start time for today.',
             style: TextStyle(color: AppColors.textSecondary),
           ),
           actions: [

@@ -1,6 +1,7 @@
 /// Local notification service — replaces Telegram notifications.
 ///
 /// Schedules local notifications for:
+///   • Minimum time reached (early leave when recovering another day)
 ///   • Work shift end
 ///   • Liquidatable overtime threshold (30 min after shift end)
 library;
@@ -113,6 +114,16 @@ class NotificationService {
       id: 1,
       title: '🏁 Turno finito!',
       body: 'Il tuo turno di lavoro è finito. È ora di andare!',
+      delay: delay,
+    );
+  }
+
+  /// Schedule minimum-time notification (early leave when recovering).
+  Future<void> scheduleMinEnd(Duration delay) async {
+    await scheduleAfter(
+      id: 3,
+      title: '✅ Minimo raggiunto!',
+      body: 'Hai raggiunto il minimo. Puoi andare se recuperi un altro giorno!',
       delay: delay,
     );
   }

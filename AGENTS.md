@@ -4,13 +4,15 @@ Flutter app (Android, iOS, Web) to track work hours, calculate shift end, and se
 
 ## Core Functionality
 
--   Work End Calculation: `Shift End = Start Time + Work Duration + Lunch Break - Leisure Time`
+-   Work End Calculation: `Shift End = Start Time + Work Duration + Lunch Break`
+-   Minimum End Calculation: `Min End = Start Time + Min Time + Lunch Break`
     -   Start Time (HH:MM)
     -   Work Duration (Default: 07:12)
     -   Lunch Break (Default: 00:30)
-    -   Leisure Time (Optional HH:MM to subtract)
-    -   Core logic: `turnEndDateTime` in `lib/services/cartellino_service.dart`
+    -   Min Time (Default: 06:00, configurable in settings — minimum to stay when recovering another day, less than full time)
+    -   Core logic: `turnEndDateTime` / `minTurnEndDateTime` in `lib/services/cartellino_service.dart`
 -   Automated Local Notifications:
+    -   Min End: when minimum time is reached.
     -   Shift End: when work duration is reached.
     -   Liquidated Overtime: +30 min past shift end (liquidatable threshold).
 -   Persistent Storage: local SQLite for settings and daily start times.
@@ -36,8 +38,8 @@ Service-oriented: `services/` = business logic / DB / state, `screens/` = UI, `w
 
 ## Database Schema
 
--   `settings`: global configs (e.g. default `work_time`, `lunch_time`).
--   `user_settings`: daily values like `start_time` and `leisure_time` (keyed by `date`).
+-   `settings`: global configs (e.g. default `work_time`, `lunch_time`, `min_time`).
+-   `user_settings`: daily values like `start_time` (keyed by `date`).
 
 ## Setup and Usage
 

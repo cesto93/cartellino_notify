@@ -37,18 +37,34 @@ String formatDuration(Duration d) {
 }
 
 /// Calculates the exact [DateTime] when the work turn ends.
+///
+/// Full shift: `Start + Work + Lunch`.
 DateTime turnEndDateTime(
   String startTimeStr, {
   String workTimeStr = '07:12',
   String lunchTimeStr = '00:30',
-  String? leisureTimeStr,
 }) {
   final start = _parseTimeToday(startTimeStr);
   final work = _parseDuration(workTimeStr);
   final lunch = _parseDuration(lunchTimeStr);
-  final leisure = leisureTimeStr != null ? _parseDuration(leisureTimeStr) : Duration.zero;
 
-  return start.add(work).add(lunch).subtract(leisure);
+  return start.add(work).add(lunch);
+}
+
+/// Calculates the exact [DateTime] when the minimum work time is reached.
+///
+/// Minimum shift (early leave when recovering another day):
+/// `Start + Min + Lunch`. [minTimeStr] must be less than the full work time.
+DateTime minTurnEndDateTime(
+  String startTimeStr, {
+  String minTimeStr = '06:00',
+  String lunchTimeStr = '00:30',
+}) {
+  final start = _parseTimeToday(startTimeStr);
+  final min = _parseDuration(minTimeStr);
+  final lunch = _parseDuration(lunchTimeStr);
+
+  return start.add(min).add(lunch);
 }
 
 /// Calculates the turn end time as an 'HH:MM' string.
@@ -56,10 +72,19 @@ String turnEndTime(
   String startTimeStr, {
   String workTimeStr = '07:12',
   String lunchTimeStr = '00:30',
-  String? leisureTimeStr,
 }) {
   return formatTime(turnEndDateTime(startTimeStr,
-      workTimeStr: workTimeStr, lunchTimeStr: lunchTimeStr, leisureTimeStr: leisureTimeStr));
+      workTimeStr: workTimeStr, lunchTimeStr: lunchTimeStr));
+}
+
+/// Calculates the minimum end time as an 'HH:MM' string.
+String minTurnEndTime(
+  String startTimeStr, {
+  String minTimeStr = '06:00',
+  String lunchTimeStr = '00:30',
+}) {
+  return formatTime(minTurnEndDateTime(startTimeStr,
+      minTimeStr: minTimeStr, lunchTimeStr: lunchTimeStr));
 }
 
 /// Calculates the remaining [Duration] until the work turn finishes.
@@ -68,10 +93,21 @@ Duration durationToTurnEnd(
   String startTimeStr, {
   String workTimeStr = '07:12',
   String lunchTimeStr = '00:30',
-  String? leisureTimeStr,
 }) {
   final finishTime = turnEndDateTime(startTimeStr,
-      workTimeStr: workTimeStr, lunchTimeStr: lunchTimeStr, leisureTimeStr: leisureTimeStr);
+      workTimeStr: workTimeStr, lunchTimeStr: lunchTimeStr);
+  return finishTime.difference(DateTime.now());
+}
+
+/// Calculates the remaining [Duration] until the minimum time is reached.
+/// Returns a negative duration if already past.
+Duration durationToMinEnd(
+  String startTimeStr, {
+  String minTimeStr = '06:00',
+  String lunchTimeStr = '00:30',
+}) {
+  final finishTime = minTurnEndDateTime(startTimeStr,
+      minTimeStr: minTimeStr, lunchTimeStr: lunchTimeStr);
   return finishTime.difference(DateTime.now());
 }
 
@@ -80,10 +116,21 @@ double secondsToTurnEnd(
   String startTimeStr, {
   String workTimeStr = '07:12',
   String lunchTimeStr = '00:30',
-  String? leisureTimeStr,
 }) {
   final d = durationToTurnEnd(startTimeStr,
-      workTimeStr: workTimeStr, lunchTimeStr: lunchTimeStr, leisureTimeStr: leisureTimeStr);
+      workTimeStr: workTimeStr, lunchTimeStr: lunchTimeStr);
+  return d.isNegative ? 0 : d.inMilliseconds / 1000;
+}
+
+/// Calculates the remaining seconds until the minimum time is reached.
+/// Returns 0 if already past.
+double secondsToMinEnd(
+  String startTimeStr, {
+  String minTimeStr = '06:00',
+  String lunchTimeStr = '00:30',
+}) {
+  final d = durationToMinEnd(startTimeStr,
+      minTimeStr: minTimeStr, lunchTimeStr: lunchTimeStr);
   return d.isNegative ? 0 : d.inMilliseconds / 1000;
 }
 
@@ -93,10 +140,9 @@ double secondsToLiquidatableOvertime(
   String startTimeStr, {
   String workTimeStr = '07:12',
   String lunchTimeStr = '00:30',
-  String? leisureTimeStr,
 }) {
   final finishTime = turnEndDateTime(startTimeStr,
-      workTimeStr: workTimeStr, lunchTimeStr: lunchTimeStr, leisureTimeStr: leisureTimeStr);
+      workTimeStr: workTimeStr, lunchTimeStr: lunchTimeStr);
   final liquidatableTime = finishTime.add(
     const Duration(minutes: liquidatableOvertimeThresholdMinutes),
   );
@@ -114,10 +160,9 @@ String workTimeStatus(
   String startTimeStr, {
   String workTimeStr = '07:12',
   String lunchTimeStr = '00:30',
-  String? leisureTimeStr,
 }) {
   final remaining = durationToTurnEnd(startTimeStr,
-      workTimeStr: workTimeStr, lunchTimeStr: lunchTimeStr, leisureTimeStr: leisureTimeStr);
+      workTimeStr: workTimeStr, lunchTimeStr: lunchTimeStr);
 
   if (!remaining.isNegative) {
     return 'Remaining: ${formatDuration(remaining)}';

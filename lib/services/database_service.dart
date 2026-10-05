@@ -1,6 +1,6 @@
 /// Port of database.py — SQLite persistence layer.
 ///
-/// Stores global settings, daily user settings (start_time, leisure_time),
+/// Stores global settings, daily user settings (start_time),
 /// and provides the same API surface as the Python original.
 library;
 
@@ -35,7 +35,7 @@ class DatabaseService {
 
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute(
           'CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)',
@@ -50,6 +50,16 @@ class DatabaseService {
             conflictAlgorithm: ConflictAlgorithm.ignore);
         await db.insert('settings', {'key': 'lunch_time', 'value': '00:30'},
             conflictAlgorithm: ConflictAlgorithm.ignore);
+        await db.insert('settings', {'key': 'min_time', 'value': '06:00'},
+            conflictAlgorithm: ConflictAlgorithm.ignore);
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.insert('settings', {'key': 'min_time', 'value': '06:00'},
+              conflictAlgorithm: ConflictAlgorithm.ignore);
+          // Clean up legacy leisure_time daily entries.
+          await db.delete('user_settings', where: 'key = ?', whereArgs: ['leisure_time']);
+        }
       },
     );
   }
