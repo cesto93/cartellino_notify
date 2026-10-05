@@ -15,6 +15,7 @@ Flutter app (Android, iOS, Web) to track work hours, calculate shift end, and se
     -   Min End: when minimum time is reached.
     -   Shift End: when work duration is reached.
     -   Liquidated Overtime: +30 min past shift end (liquidatable threshold).
+        Toggleable via Settings (`Liq. Overtime Notify`, persisted as `liq_overtime_notify_enabled` `1`/`0` in `settings`, default enabled; state in `AppState.liqOvertimeNotifyEnabled`, cancels ID 2 when off).
 -   Persistent Storage: local SQLite for settings and daily start times.
 
 ## Project Structure

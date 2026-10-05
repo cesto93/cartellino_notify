@@ -35,6 +35,9 @@ class AppState extends ChangeNotifier {
   String _minTime = '06:00';
   String get minTime => _minTime;
 
+  bool _liqOvertimeNotifyEnabled = true;
+  bool get liqOvertimeNotifyEnabled => _liqOvertimeNotifyEnabled;
+
   ShiftStatus _status = ShiftStatus.notStarted;
   ShiftStatus get status => _status;
 
@@ -74,6 +77,10 @@ class AppState extends ChangeNotifier {
     _workTime = await _db.getSetting('work_time') ?? '07:12';
     _lunchTime = await _db.getSetting('lunch_time') ?? '00:30';
     _minTime = await _db.getSetting('min_time') ?? '06:00';
+    final liqNotifyRaw = await _db.getSetting('liq_overtime_notify_enabled');
+    // Default to enabled when the setting was never stored.
+    _liqOvertimeNotifyEnabled =
+        liqNotifyRaw == null || liqNotifyRaw == '1' || liqNotifyRaw.toLowerCase() == 'true';
     _startTime = await _db.getStartTime();
     _recalculate();
     notifyListeners();
@@ -139,6 +146,15 @@ class AppState extends ChangeNotifier {
     _minTime = time;
     await _db.storeSetting('min_time', time);
     _recalculate();
+    notifyListeners();
+    if (_startTime != null) await _scheduleNotifications();
+  }
+
+  /// Enable or disable the liquidatable overtime notification.
+  Future<void> setLiqOvertimeNotifyEnabled(bool enabled) async {
+    _liqOvertimeNotifyEnabled = enabled;
+    await _db.storeSetting(
+        'liq_overtime_notify_enabled', enabled ? '1' : '0');
     notifyListeners();
     if (_startTime != null) await _scheduleNotifications();
   }
@@ -253,8 +269,12 @@ class AppState extends ChangeNotifier {
       await _notifications.scheduleWorkEnd(Duration(seconds: secToEnd.round()));
     }
 
-    if (secToLiq > 0) {
+    if (_liqOvertimeNotifyEnabled && secToLiq > 0) {
       await _notifications.scheduleLiquidatableOvertime(Duration(seconds: secToLiq.round()));
+    } else {
+      // Make sure a previously scheduled liq. overtime notification
+      // is removed when the option is off.
+      await _notifications.cancelNotification(2);
     }
 
     _notificationsScheduled = true;

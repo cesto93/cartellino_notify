@@ -144,6 +144,11 @@ class NotificationService {
     await _plugin.cancelAll();
   }
 
+  /// Cancel a single scheduled notification by [id].
+  Future<void> cancelNotification(int id) async {
+    await _cancelNotification(id);
+  }
+
   Future<void> _cancelNotification(int id) async {
     if (kIsWeb) return;
     await _plugin.cancel(id: id);

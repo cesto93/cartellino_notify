@@ -35,7 +35,7 @@ class DatabaseService {
 
     return openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await db.execute(
           'CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)',
@@ -52,6 +52,9 @@ class DatabaseService {
             conflictAlgorithm: ConflictAlgorithm.ignore);
         await db.insert('settings', {'key': 'min_time', 'value': '06:00'},
             conflictAlgorithm: ConflictAlgorithm.ignore);
+        await db.insert(
+            'settings', {'key': 'liq_overtime_notify_enabled', 'value': '1'},
+            conflictAlgorithm: ConflictAlgorithm.ignore);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -59,6 +62,11 @@ class DatabaseService {
               conflictAlgorithm: ConflictAlgorithm.ignore);
           // Clean up legacy leisure_time daily entries.
           await db.delete('user_settings', where: 'key = ?', whereArgs: ['leisure_time']);
+        }
+        if (oldVersion < 3) {
+          await db.insert(
+              'settings', {'key': 'liq_overtime_notify_enabled', 'value': '1'},
+              conflictAlgorithm: ConflictAlgorithm.ignore);
         }
       },
     );
