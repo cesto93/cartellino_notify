@@ -44,7 +44,7 @@ Service-oriented: `services/` = business logic / DB / state, `screens/` = UI, `w
 
 ## Setup and Usage
 
-Prerequisites: Flutter 3.x+, Android SDK / Xcode (mobile) or Chrome (web).
+Prerequisites: Flutter 3.x+, Android SDK / Xcode (mobile) or Chrome (web), Java 17 JDK for Android builds (Gradle 8.x + Kotlin 2.2.x cannot run on Java 25; point Flutter at a Java 17 JDK, e.g. `flutter config --jdk-dir=<path-to-jdk-17>`).
 
 ```bash
 flutter pub get
