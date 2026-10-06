@@ -51,6 +51,7 @@ flutter pub get
 flutter run # or flutter run -d chrome for web
 flutter test
 make apk # flutter build apk --split-per-abi
+make install # adb install -r build/app/outputs/flutter-apk/app-arm64-v8a-release.apk (APK=... to override)
 make web # flutter build web
 ```
 
